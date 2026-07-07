@@ -1,0 +1,543 @@
+<meta charset="utf-8">
+<title>Бодо Бородо — Игры на логику</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+  :root{
+    --sky:#C9EAF6; --sky2:#9FD9EE;
+    --orange:#F2691F; --orange-d:#D5540F;
+    --bodo:#9FDCEA;
+    --sun:#FFC94B;
+    --leaf:#7DC24B; --leaf-d:#5FA636;
+    --ink:#2E3A48;
+    --card:#FFFFFF;
+    --pink:#F2699C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  html,body{height:100%;overflow:hidden;position:fixed;inset:0;width:100%}
+  body{
+    font-family:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Comic Sans MS",system-ui,sans-serif;
+    background:linear-gradient(var(--sky) 0%,var(--sky2) 78%,var(--leaf) 78%,var(--leaf-d) 100%);
+    color:var(--ink);
+    touch-action:manipulation;
+  }
+  img{pointer-events:none;-webkit-user-drag:none}
+
+  /* декорации */
+  .sun{position:fixed;top:-9vmin;right:-9vmin;width:30vmin;height:30vmin;border-radius:50%;
+    background:var(--sun);box-shadow:0 0 0 4vmin rgba(255,201,75,.35),0 0 0 8vmin rgba(255,201,75,.15);z-index:0}
+  .cloud{position:fixed;background:#fff;border-radius:100px;opacity:.9;z-index:0;animation:drift 60s linear infinite}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+  .c1{top:9%;left:8%;width:16vmin;height:5.5vmin}
+  .c1::before{width:8vmin;height:8vmin;top:-4vmin;left:2.5vmin}
+  .c1::after{width:6vmin;height:6vmin;top:-2.6vmin;left:8vmin}
+  .c2{top:22%;left:60%;width:13vmin;height:4.6vmin;animation-duration:80s;animation-delay:-30s}
+  .c2::before{width:6.6vmin;height:6.6vmin;top:-3.2vmin;left:2vmin}
+  .c2::after{width:5vmin;height:5vmin;top:-2vmin;left:6.6vmin}
+  @keyframes drift{from{transform:translateX(0)}50%{transform:translateX(14vw)}to{transform:translateX(0)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;z-index:1;
+    padding:max(10px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom))}
+  .screen.on{display:flex}
+
+  /* ===== МЕНЮ ===== */
+  #menu{justify-content:center;gap:2.2vmin}
+  .hello{display:flex;align-items:flex-end;gap:1vmin}
+  .hello img{width:min(27vmin,200px);filter:drop-shadow(0 1.4vmin 0 rgba(46,58,72,.12))}
+  .bubble{background:#fff;border-radius:24px;padding:2vmin 3vmin;font-size:min(3.6vmin,26px);font-weight:800;
+    position:relative;margin-bottom:9vmin;box-shadow:0 .8vmin 0 rgba(46,58,72,.10)}
+  .bubble::after{content:"";position:absolute;left:-1.6vmin;bottom:2.4vmin;border:1.6vmin solid transparent;border-right-color:#fff;border-left:0}
+  h1{font-size:min(6vmin,44px);letter-spacing:.5px;color:var(--orange-d);
+    text-shadow:0 .45vmin 0 #fff;line-height:1.05;text-align:center}
+  .menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2.2vmin;width:min(92vw,760px)}
+  .mbtn{display:flex;align-items:center;gap:2.4vmin;background:var(--card);border:none;border-radius:26px;
+    padding:2.4vmin 3vmin;font-family:inherit;font-size:min(3.8vmin,27px);font-weight:800;color:var(--ink);
+    box-shadow:0 .9vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .mbtn:active{transform:translateY(.5vmin);box-shadow:0 .3vmin 0 rgba(46,58,72,.14)}
+  .mbtn img{width:min(11vmin,76px);height:min(11vmin,76px);object-fit:contain}
+  .mbtn .tag{display:block;font-size:min(2.5vmin,17px);font-weight:700;color:#8797a8}
+
+  /* ===== ИГРОВОЙ ЭКРАН ===== */
+  .topbar{width:100%;max-width:900px;display:flex;align-items:center;gap:2vmin;padding:.6vmin 0 1.2vmin}
+  .home{width:9vmin;height:9vmin;max-width:64px;max-height:64px;border:none;border-radius:50%;background:#fff;
+    font-size:min(4.6vmin,30px);box-shadow:0 .6vmin 0 rgba(46,58,72,.14);cursor:pointer;flex:none;line-height:1}
+  .home:active{transform:translateY(.4vmin);box-shadow:none}
+  .task{flex:1;background:rgba(255,255,255,.85);border-radius:20px;padding:1.6vmin 2.4vmin;
+    font-size:min(3.6vmin,25px);font-weight:800;text-align:center}
+  .stars{display:flex;gap:.8vmin;flex:none}
+  .stars span{font-size:min(4.2vmin,28px);filter:grayscale(1) opacity(.35);transition:transform .3s}
+  .stars span.got{filter:none;transform:scale(1.15)}
+
+  #board{flex:1;width:100%;max-width:900px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vmin;min-height:0}
+
+  .row{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:2.2vmin}
+
+  .tile{background:var(--card);border:none;border-radius:22px;box-shadow:0 .8vmin 0 rgba(46,58,72,.14);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:1.6vmin;position:relative}
+  .tile:active{transform:translateY(.4vmin);box-shadow:0 .3vmin 0 rgba(46,58,72,.14)}
+  .tile img{width:100%;height:100%;object-fit:contain}
+  .tile.big{width:min(24vmin,170px);height:min(24vmin,170px)}
+  .tile.correct{background:#DFF3CE;animation:pop .45s}
+  .tile.wrong{animation:shake .45s}
+  @keyframes pop{40%{transform:scale(1.12)}}
+  @keyframes shake{20%,60%{transform:translateX(-1.2vmin)}40%,80%{transform:translateX(1.2vmin)}}
+
+  /* мемори-карты */
+  .card3d{perspective:700px;background:none;border:none;cursor:pointer;
+    width:min(21vmin,150px);height:min(24vmin,170px);padding:0}
+  .card3d .in{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .4s}
+  .card3d.open .in{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 .7vmin 0 rgba(46,58,72,.16)}
+  .face.back{background:var(--orange);color:#fff;font-size:min(9vmin,60px);font-weight:800}
+  .face.back::after{content:"?";}
+  .face.front{background:#fff;transform:rotateY(180deg);padding:1.4vmin}
+  .face.front img{width:100%;height:100%;object-fit:contain}
+  .card3d.done .face.front{background:#DFF3CE}
+
+  /* тень */
+  .shadow-img{filter:brightness(0) opacity(.8)}
+  .reveal{filter:none;transition:filter .5s}
+
+  /* ряд-последовательность */
+  .seq .tile{width:min(15vmin,110px);height:min(15vmin,110px);cursor:default;padding:1vmin}
+  .seq .tile:active{transform:none;box-shadow:0 .8vmin 0 rgba(46,58,72,.14)}
+  .slot{border:.6vmin dashed var(--orange);background:rgba(255,255,255,.55)}
+  .slot::after{content:"?";font-size:min(7vmin,46px);font-weight:800;color:var(--orange)}
+  .slot.filled::after{content:none}
+  .qrow-label{font-size:min(3vmin,20px);font-weight:800;color:#5c6c7d}
+
+  /* имена морфиков */
+  .pairs{display:flex;gap:7vmin;align-items:flex-start;justify-content:center}
+  .col{display:flex;flex-direction:column;gap:2.2vmin}
+  .namebtn{border:none;border-radius:20px;background:#fff;color:var(--orange-d);font-family:inherit;
+    font-size:min(5vmin,34px);font-weight:800;padding:1.6vmin 4vmin;min-width:min(30vmin,210px);
+    box-shadow:0 .7vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .namebtn:active{transform:translateY(.4vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
+  .tile.small{width:min(17vmin,122px);height:min(17vmin,122px)}
+  .sel{outline:.8vmin solid var(--orange);outline-offset:.3vmin}
+  .namebtn.done,.tile.done{background:#DFF3CE;color:#4c8b2b;outline:none}
+
+  /* лови буквы */
+  #arena{position:relative;flex:1;width:100%;max-width:900px;min-height:0;overflow:hidden;
+    border-radius:24px;background:rgba(255,255,255,.25);touch-action:none}
+  .catcher{position:absolute;bottom:0;width:min(24vmin,175px);transition:transform .15s;will-change:left}
+  .letter{position:absolute;width:min(10vmin,70px);height:min(10vmin,70px);border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:min(6.2vmin,42px);font-weight:800;
+    color:var(--orange-d);box-shadow:0 .5vmin 0 rgba(46,58,72,.16);will-change:top}
+
+  /* ===== ПОХВАЛА ===== */
+  #praise{position:fixed;inset:0;background:rgba(255,255,255,.75);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.5vmin;z-index:50}
+  #praise.on{display:flex}
+  #praise img{width:min(40vmin,300px);animation:bounce .55s ease infinite alternate}
+  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-3.4vmin)}}
+  #praise .word{font-size:min(8.5vmin,64px);font-weight:800;color:var(--orange-d);text-shadow:0 .5vmin 0 #fff}
+  .confetti{position:absolute;font-size:5vmin;animation:fall 1.4s ease-in forwards}
+  @keyframes fall{from{transform:translateY(-15vh) rotate(0)}to{transform:translateY(110vh) rotate(340deg);opacity:.3}}
+</style>
+
+<div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
+
+<!-- МЕНЮ -->
+<div id="menu" class="screen on">
+  <h1>Бодо Бородо<br>Игры на логику</h1>
+  <div class="hello">
+    <img data-img="bodo" alt="Бодо">
+    <div class="bubble" id="menuBubble">Привет! Поиграем?</div>
+  </div>
+  <div class="menu-grid">
+    <button class="mbtn" data-game="memory"><img data-img="am" alt="">Найди пару</button>
+    <button class="mbtn" data-game="odd"><img data-img="kvak" alt="">Кто лишний?</button>
+    <button class="mbtn" data-game="shadow"><img data-img="ino" alt="">Чья тень?</button>
+    <button class="mbtn" data-game="seq"><img data-img="krya" alt="">Продолжи ряд</button>
+    <button class="mbtn" data-game="names"><img data-img="una" alt="">Как зовут?</button>
+    <button class="mbtn" data-game="letters"><img data-img="osya" alt="">Лови буквы!</button>
+  </div>
+</div>
+
+<!-- ИГРА -->
+<div id="game" class="screen">
+  <div class="topbar">
+    <button class="home" id="homeBtn">🏠</button>
+    <div class="task" id="task"></div>
+    <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
+  </div>
+  <div id="board"></div>
+</div>
+
+<!-- ПОХВАЛА -->
+<div id="praise">
+  <img data-img="bodo" alt="">
+  <div class="word" id="praiseWord">Молодец!</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var IMG = {
+  bodo:"__IMG_bodo__",
+  am:"__IMG_am__", zhu:"__IMG_zhu__", zub:"__IMG_zub__", ino:"__IMG_ino__",
+  kvak:"__IMG_kvak__", krya:"__IMG_krya__", nos:"__IMG_nos__",
+  osya:"__IMG_osya__", una:"__IMG_una__", chupa:"__IMG_chupa__"
+};
+var CHARS = ["am","zhu","zub","ino","kvak","krya","nos","osya","una","chupa"];
+
+document.querySelectorAll("img[data-img]").forEach(function(im){ im.src=IMG[im.dataset.img]; });
+
+/* ---------- звук ---------- */
+var actx=null;
+function ac(){ if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==="suspended") actx.resume(); return actx; }
+function tone(f,t0,dur,vol,type){
+  var a=ac(),o=a.createOscillator(),g=a.createGain();
+  o.type=type||"sine"; o.frequency.value=f;
+  g.gain.setValueAtTime(0.0001,a.currentTime+t0);
+  g.gain.exponentialRampToValueAtTime(vol||.25,a.currentTime+t0+.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+t0+dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(a.currentTime+t0); o.stop(a.currentTime+t0+dur+.05);
+}
+function sndTap(){ tone(520,0,.09,.12,"triangle"); }
+function sndGood(){ tone(523,0,.14,.22,"triangle"); tone(659,.10,.14,.22,"triangle"); tone(784,.20,.25,.22,"triangle"); }
+function sndWin(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f,i*.13,.16,.22,"triangle"); }); }
+function sndNo(){ tone(220,0,.22,.14,"sine"); }
+
+/* голос Бодо: мужской, низкий и добрый */
+var ruVoice=null;
+function pickVoice(){
+  try{
+    var vs=speechSynthesis.getVoices().filter(function(v){return /^ru([-_]|$)/i.test(v.lang);});
+    if(!vs.length) return;
+    var male=vs.filter(function(v){return /(yuri|юрий|dmit|дмитр|pavel|павел|male|мужск|aleksandr|александр)/i.test(v.name);})[0];
+    ruVoice = male || vs[0];
+  }catch(e){}
+}
+try{ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }catch(e){}
+
+function say(text){
+  try{
+    if(!ruVoice) pickVoice();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang="ru-RU"; u.rate=.9; u.pitch=.7; u.volume=1;
+    if(ruVoice) u.voice=ruVoice;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---------- утилиты ---------- */
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function pick(a,n){ return shuffle(a).slice(0,n); }
+function el(tag,cls,parent){ var e=document.createElement(tag); if(cls)e.className=cls; if(parent)parent.appendChild(e); return e; }
+
+var menu=document.getElementById("menu"), game=document.getElementById("game"),
+    board=document.getElementById("board"), taskEl=document.getElementById("task"),
+    starsEl=document.getElementById("stars"), praise=document.getElementById("praise"),
+    praiseWord=document.getElementById("praiseWord");
+
+var current=null, stars=0, busy=false, cleanup=null;
+
+function show(scr){
+  if(scr===menu && cleanup){ cleanup(); cleanup=null; }
+  menu.classList.remove("on"); game.classList.remove("on"); scr.classList.add("on");
+}
+
+function setTask(t, spoken){
+  taskEl.textContent=t;
+  taskEl.onclick=function(){ say(spoken||t); };
+}
+
+function paintStars(){
+  var s=starsEl.children;
+  for(var i=0;i<s.length;i++) s[i].classList.toggle("got", i<stars);
+}
+
+var PRAISE=["Молодец!","Умница!","Правильно!","Здорово!","Супер!","Отлично!"];
+function celebrate(big, then){
+  var w=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+  praiseWord.textContent = big ? "Ты победил! 🎉" : w;
+  praise.classList.add("on");
+  if(big){ sndWin(); say("Ура! Ты победил! Ты настоящий молодец!"); confetti(); }
+  else { sndGood(); say(w); }
+  setTimeout(function(){ praise.classList.remove("on"); then&&then(); }, big?2600:1300);
+}
+function confetti(){
+  var EM=["⭐","🎉","✨","🌟","🧡"];
+  for(var i=0;i<24;i++){
+    var c=el("div","confetti",praise);
+    c.textContent=EM[i%EM.length];
+    c.style.left=(Math.random()*96)+"vw";
+    c.style.animationDelay=(Math.random()*.9)+"s";
+    (function(n){ setTimeout(function(){ n.remove(); },2600); })(c);
+  }
+}
+
+function starWon(){
+  stars++; paintStars();
+  if(stars>=5){
+    celebrate(true,function(){ stars=0; paintStars(); show(menu); });
+    return true;
+  }
+  return false;
+}
+
+/* ---------- игра 1: мемори ---------- */
+function memoryRound(){
+  var pairs = stars<2 ? 4 : (stars<4 ? 6 : 8);
+  var cw = pairs===4 ? "min(20vmin,140px)" : (pairs===6 ? "min(17vmin,118px)" : "min(14.5vmin,100px)");
+  var ch = pairs===4 ? "min(23vmin,160px)" : (pairs===6 ? "min(19.5vmin,134px)" : "min(16.5vmin,113px)");
+  setTask("Найди пары!","Найди одинаковые карточки. Где спрятались пары?");
+  board.innerHTML="";
+  var chosen=pick(CHARS,pairs), deck=shuffle(chosen.concat(chosen));
+  var row=el("div","row",board);
+  row.style.maxWidth = "calc(4 * (" + cw + " + 2.2vmin) + 2.2vmin)";
+  var open=[], matched=0;
+  deck.forEach(function(id){
+    var b=el("button","card3d",row);
+    b.style.width=cw; b.style.height=ch;
+    b.innerHTML='<div class="in"><div class="face back"></div><div class="face front"><img src="'+IMG[id]+'" alt=""></div></div>';
+    b.onclick=function(){
+      if(busy||b.classList.contains("open"))return;
+      sndTap(); b.classList.add("open"); open.push({b:b,id:id});
+      if(open.length===2){
+        busy=true;
+        var a=open[0],c=open[1]; open=[];
+        if(a.id===c.id){
+          a.b.classList.add("done"); c.b.classList.add("done");
+          matched++;
+          setTimeout(function(){
+            busy=false; sndGood();
+            if(matched===pairs){ if(!starWon()) celebrate(false, memoryRound); }
+          },350);
+        } else {
+          setTimeout(function(){
+            a.b.classList.remove("open"); c.b.classList.remove("open");
+            busy=false;
+          },950);
+        }
+      }
+    };
+  });
+}
+
+/* ---------- игра 2: кто лишний ---------- */
+function oddRound(){
+  setTask("Кто здесь лишний?","Посмотри внимательно. Три морфика одинаковые, а один — другой. Кто лишний?");
+  board.innerHTML="";
+  var two=pick(CHARS,2), same=two[0], odd=two[1];
+  var items=shuffle([same,same,same,odd]);
+  var row=el("div","row",board);
+  items.forEach(function(id){
+    var b=el("button","tile big",row);
+    b.innerHTML='<img src="'+IMG[id]+'" alt="">';
+    b.onclick=function(){
+      if(busy)return;
+      if(id===odd){
+        busy=true; b.classList.add("correct");
+        setTimeout(function(){ busy=false; if(!starWon()) celebrate(false, oddRound); },420);
+      } else { sndNo(); b.classList.add("wrong"); setTimeout(function(){b.classList.remove("wrong");},480); }
+    };
+  });
+}
+
+/* ---------- игра 3: чья тень ---------- */
+function shadowRound(){
+  setTask("Чья это тень?","Посмотри на тёмную тень. Кто из морфиков там спрятался?");
+  board.innerHTML="";
+  var three=pick(CHARS,3), target=three[0];
+  var top=el("div","row",board);
+  var sh=el("div","tile big",top);
+  sh.style.cursor="default";
+  sh.innerHTML='<img class="shadow-img" src="'+IMG[target]+'" alt="">';
+  var shImg=sh.querySelector("img");
+  var row=el("div","row",board);
+  shuffle(three).forEach(function(id){
+    var b=el("button","tile big",row);
+    b.innerHTML='<img src="'+IMG[id]+'" alt="">';
+    b.onclick=function(){
+      if(busy)return;
+      if(id===target){
+        busy=true; b.classList.add("correct"); shImg.classList.add("reveal");
+        setTimeout(function(){ busy=false; if(!starWon()) celebrate(false, shadowRound); },800);
+      } else { sndNo(); b.classList.add("wrong"); setTimeout(function(){b.classList.remove("wrong");},480); }
+    };
+  });
+}
+
+/* ---------- игра 4: продолжи ряд ---------- */
+function seqRound(){
+  setTask("Кто будет дальше?","Посмотри на ряд. Морфики чередуются. Кто должен стоять следующим?");
+  board.innerHTML="";
+  var three=pick(CHARS,3), A=three[0], B=three[1], C=three[2];
+  var pattern=[A,B,A,B], answer=A;
+  var seq=el("div","row seq",board);
+  pattern.forEach(function(id){
+    var t=el("div","tile",seq);
+    t.innerHTML='<img src="'+IMG[id]+'" alt="">';
+  });
+  var slot=el("div","tile slot",seq);
+  var lbl=el("div","qrow-label",board); lbl.textContent="Выбери, кто дальше:";
+  var row=el("div","row",board);
+  shuffle([A,B,C]).forEach(function(id){
+    var b=el("button","tile big",row);
+    b.innerHTML='<img src="'+IMG[id]+'" alt="">';
+    b.onclick=function(){
+      if(busy)return;
+      if(id===answer){
+        busy=true; b.classList.add("correct");
+        slot.classList.add("filled");
+        slot.innerHTML='<img src="'+IMG[id]+'" alt="">';
+        setTimeout(function(){ busy=false; if(!starWon()) celebrate(false, seqRound); },800);
+      } else { sndNo(); b.classList.add("wrong"); setTimeout(function(){b.classList.remove("wrong");},480); }
+    };
+  });
+}
+
+/* ---------- игра 5: как зовут морфиков ---------- */
+var NAMES={am:"Ам",zhu:"Жу",zub:"Зуб",ino:"Ино",kvak:"Квак",krya:"КряКря",nos:"Нос",osya:"Ося",una:"Уна",chupa:"Чупа"};
+function namesRound(){
+  setTask("Соедини имя и морфика!","Нажми на имя, а потом на морфика, которого так зовут!");
+  board.innerHTML="";
+  var three=pick(CHARS,3);
+  var wrap=el("div","pairs",board);
+  var colN=el("div","col",wrap), colI=el("div","col",wrap);
+  var selN=null, selI=null, matched=0;
+  shuffle(three).forEach(function(id){
+    var b=el("button","namebtn",colN);
+    b.textContent=NAMES[id]; b.dataset.id=id;
+    b.onclick=function(){
+      if(b.classList.contains("done")||busy)return;
+      sndTap(); say(NAMES[id]);
+      colN.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel");});
+      b.classList.add("sel"); selN=b; check();
+    };
+  });
+  shuffle(three).forEach(function(id){
+    var b=el("button","tile small",colI);
+    b.innerHTML='<img src="'+IMG[id]+'" alt="">'; b.dataset.id=id;
+    b.onclick=function(){
+      if(b.classList.contains("done")||busy)return;
+      sndTap();
+      colI.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel");});
+      b.classList.add("sel"); selI=b; check();
+    };
+  });
+  function check(){
+    if(!selN||!selI) return;
+    var a=selN,c=selI; selN=null; selI=null;
+    if(a.dataset.id===c.dataset.id){
+      a.classList.remove("sel"); c.classList.remove("sel");
+      a.classList.add("done"); c.classList.add("done");
+      matched++; sndGood();
+      if(matched===3){
+        busy=true;
+        setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,namesRound); },450);
+      }
+    } else {
+      busy=true;
+      a.classList.add("wrong"); c.classList.add("wrong"); sndNo();
+      setTimeout(function(){
+        a.classList.remove("wrong"); a.classList.remove("sel");
+        c.classList.remove("wrong"); c.classList.remove("sel");
+        busy=false;
+      },500);
+    }
+  }
+}
+
+/* ---------- игра 6: Бодо ловит буквы ---------- */
+function lettersGame(){
+  var LET="АБВГДЕЖЗИКЛМНОПРСТУ".split("");
+  var target=null, caught=0, letters=[], raf=null, spawnT=.4, paused=false, alive=true;
+  board.innerHTML="";
+  var arena=el("div","",board); arena.id="arena";
+  var bodo=el("img","catcher",arena); bodo.src=IMG.bodo; bodo.alt="";
+  var bx=.5;
+  function place(){
+    var r=arena.getBoundingClientRect();
+    bodo.style.left=(bx*r.width - bodo.offsetWidth/2)+"px";
+  }
+  function newTarget(){
+    var old=target;
+    do{ target=LET[Math.floor(Math.random()*LET.length)]; }while(target===old);
+    caught=0;
+    setTask("Лови букву «"+target+"»! ("+caught+" из 3)","Лови букву "+target+"! Двигай Бо́до пальцем!");
+    say("Лови букву "+target+"!");
+  }
+  function move(e){
+    var r=arena.getBoundingClientRect();
+    var cx=(e.touches&&e.touches.length?e.touches[0].clientX:e.clientX)-r.left;
+    bx=Math.max(.08,Math.min(.92,cx/r.width)); place();
+  }
+  arena.addEventListener("pointerdown",move);
+  arena.addEventListener("pointermove",function(e){ if(e.pressure>0||e.buttons)move(e); });
+  arena.addEventListener("touchstart",function(e){ e.preventDefault(); move(e); },{passive:false});
+  arena.addEventListener("touchmove",function(e){ e.preventDefault(); move(e); },{passive:false});
+  function spawn(){
+    var ch=Math.random()<.5?target:LET[Math.floor(Math.random()*LET.length)];
+    var d=el("div","letter",arena);
+    d.textContent=ch;
+    var r=arena.getBoundingClientRect();
+    d.style.left=((.06+Math.random()*.82)*r.width)+"px";
+    d.style.top="-80px";
+    letters.push({el:d,y:-80,v:r.height/6*(0.85+Math.random()*.5),ch:ch});
+  }
+  var last=performance.now();
+  function frame(now){
+    if(!alive) return;
+    var dt=Math.min((now-last)/1000,.05); last=now;
+    if(!paused){
+      spawnT-=dt;
+      if(spawnT<=0){ spawn(); spawnT=1.6; }
+      var r=arena.getBoundingClientRect();
+      var bw=bodo.offsetWidth, btop=r.height-bodo.offsetHeight*.8, bcx=bx*r.width;
+      for(var i=letters.length-1;i>=0;i--){
+        var L=letters[i];
+        L.y+=L.v*dt; L.el.style.top=L.y+"px";
+        var lcx=parseFloat(L.el.style.left)+L.el.offsetWidth/2;
+        if(L.y+L.el.offsetHeight>btop && L.y<r.height && Math.abs(lcx-bcx)<bw*.45){
+          L.el.remove(); letters.splice(i,1);
+          if(L.ch===target){
+            caught++; sndGood();
+            bodo.style.transform="scale(1.14)";
+            setTimeout(function(){ bodo.style.transform=""; },200);
+            if(caught>=3){
+              paused=true;
+              if(!starWon()){
+                celebrate(false,function(){ clearL(); newTarget(); paused=false; });
+              }
+            } else {
+              setTask("Лови букву «"+target+"»! ("+caught+" из 3)","Лови букву "+target+"!");
+            }
+          } else { sndNo(); }
+        } else if(L.y>r.height+20){ L.el.remove(); letters.splice(i,1); }
+      }
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  function clearL(){ letters.forEach(function(L){ L.el.remove(); }); letters=[]; }
+  cleanup=function(){ alive=false; if(raf)cancelAnimationFrame(raf); };
+  newTarget();
+  requestAnimationFrame(function(){ place(); });
+  raf=requestAnimationFrame(frame);
+}
+
+/* ---------- навигация ---------- */
+var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound, names:namesRound, letters:lettersGame};
+document.querySelectorAll(".mbtn").forEach(function(b){
+  b.onclick=function(){
+    ac(); sndTap();
+    current=b.dataset.game; stars=0; paintStars();
+    show(game); GAMES[current]();
+    if(current!=="letters") taskEl.onclick();
+  };
+});
+document.getElementById("homeBtn").onclick=function(){ sndTap(); show(menu); };
+
+document.getElementById("menuBubble").onclick=function(){ ac(); say("Привет! Я Бо́до Бородо́! Поиграем?"); };
+
+/* двойной тап-зум off */
+document.addEventListener("dblclick",function(e){ e.preventDefault(); },{passive:false});
+})();
+</script>
