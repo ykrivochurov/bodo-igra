@@ -185,6 +185,28 @@
   .meadow.correct{background:#DFF3CE;animation:pop .45s}
   .meadow.wrong{animation:shake .45s}
 
+  /* запрограммируй Бодо */
+  .prog-wrap{position:relative}
+  .prog-grid{display:grid;gap:.8vmin;background:rgba(255,255,255,.4);padding:1.2vmin;border-radius:18px}
+  .pcell{background:rgba(255,255,255,.9);border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:min(7vmin,48px);width:var(--pc);height:var(--pc)}
+  .pcell img{width:82%;height:82%;object-fit:contain}
+  .prog-token{position:absolute;transition:left .34s ease,top .34s ease;pointer-events:none;z-index:4;
+    width:var(--pc);height:var(--pc);padding:6%;object-fit:contain}
+  .prog-token.bump{animation:shake .5s}
+  .prog-controls{display:flex;flex-direction:column;gap:1.6vmin;align-items:center}
+  .pslots{display:flex;gap:1vmin;flex-wrap:wrap;justify-content:center}
+  .pslot{width:min(8vmin,54px);height:min(8vmin,54px);background:rgba(255,255,255,.75);border-radius:12px;
+    display:flex;align-items:center;justify-content:center;font-size:min(5.5vmin,36px);font-weight:800;color:var(--orange-d)}
+  .pslot.cur{outline:.6vmin solid var(--orange)}
+  .arrow-pal{display:flex;gap:1.6vmin;align-items:center}
+  .arrbtn{width:min(11vmin,74px);height:min(11vmin,74px);border:none;border-radius:18px;background:#fff;
+    font-size:min(6.5vmin,44px);font-weight:800;color:var(--orange-d);font-family:inherit;
+    box-shadow:0 .7vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .arrbtn:active{transform:translateY(.4vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
+  .runbtn{background:#7DC24B;color:#fff;font-size:min(4vmin,26px);padding:0 3vmin;width:auto}
+  .delbtn{background:#F2699C;color:#fff}
+
   /* ===== ПОХВАЛА ===== */
   #praise{position:fixed;inset:0;background:rgba(255,255,255,.75);backdrop-filter:blur(4px);
     display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.5vmin;z-index:50}
@@ -223,6 +245,7 @@
     <button class="mbtn" data-game="puzzle"><img data-img="zub" alt="">Пазл</button>
     <button class="mbtn" data-game="simon"><img data-img="am" alt="">Повтори!</button>
     <button class="mbtn" data-game="count"><img data-img="krya" alt="">Кого больше?</button>
+    <button class="mbtn" data-game="prog"><img data-img="nos" alt="">Запрограммируй!</button>
   </div>
 </div>
 
@@ -281,8 +304,8 @@ function pickVoice(){
     if(!vs.length) return;
     function score(v){
       var s=0, n=v.name.toLowerCase();
+      if(/^milena/.test(n)) s+=10;                            /* Milena — выбор пользователя */
       if(/enhanced|premium|расширен|улучшен/.test(n)) s+=4;   /* качественные голоса iOS/macOS */
-      if(/yuri|юрий|dmit|дмитр|pavel|павел|aleksandr|александр|male|мужск/.test(n)) s+=2;
       if(v.localService) s+=1;
       return s;
     }
@@ -308,7 +331,7 @@ function say(text){
   try{
     if(!ruVoice) pickVoice();
     var u=new SpeechSynthesisUtterance(fixStress(text));
-    u.lang="ru-RU"; u.rate=.95; u.pitch=.85; u.volume=1;
+    u.lang="ru-RU"; u.rate=.95; u.pitch=1; u.volume=1;
     if(ruVoice) u.voice=ruVoice;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
@@ -1105,12 +1128,151 @@ function countRound(){
   });
 }
 
+/* ---------- игра 14: запрограммируй Бодо ---------- */
+function progRound(){
+  board.innerHTML="";
+  var alive=true, timers=[];
+  function later(fn,ms){ timers.push(setTimeout(function(){ if(alive)fn(); },ms)); }
+  cleanup=function(){ alive=false; timers.forEach(clearTimeout); };
+
+  /* сложность: размер поля, длина пути, препятствия */
+  var GW = stars<2?4:(stars<4?5:6);
+  var GH = stars<2?3:4;
+  var steps = stars<2?3:(stars<4?5:7);
+  var nObst = stars<1?1:(stars<3?2:4);
+
+  /* генерируем путь случайным блужданием нужной длины */
+  var sx=0, sy=GH-1, path=null, guard=0;
+  while(!path && guard<300){
+    guard++;
+    var p=[[sx,sy]], seen={}; seen[sx+","+sy]=1;
+    for(var s=0;s<steps;s++){
+      var last=p[p.length-1];
+      var dirs=shuffle([[1,0],[-1,0],[0,1],[0,-1]]), ok=false;
+      for(var d=0;d<dirs.length;d++){
+        var nx=last[0]+dirs[d][0], ny=last[1]+dirs[d][1];
+        if(nx>=0&&nx<GW&&ny>=0&&ny<GH&&!seen[nx+","+ny]){
+          p.push([nx,ny]); seen[nx+","+ny]=1; ok=true; break;
+        }
+      }
+      if(!ok) break;
+    }
+    if(p.length===steps+1){
+      var e=p[p.length-1];
+      var dist=Math.abs(e[0]-sx)+Math.abs(e[1]-sy);
+      if(dist>=Math.min(steps,3)) path=p;   /* морфик не должен стоять рядом со стартом */
+    }
+  }
+  if(!path){ path=[[0,GH-1],[1,GH-1],[2,GH-1],[3,GH-1]].slice(0,Math.min(steps+1,GW)); }
+  var tgt=path[path.length-1];
+  var onPath={}; path.forEach(function(c){ onPath[c[0]+","+c[1]]=1; });
+  var obst={}, free=[];
+  for(var gy=0;gy<GH;gy++)for(var gx=0;gx<GW;gx++){ if(!onPath[gx+","+gy]) free.push([gx,gy]); }
+  shuffle(free).slice(0,nObst).forEach(function(c){ obst[c[0]+","+c[1]]=Math.random()<.5?"🌳":"🪨"; });
+  var goalChar=CHARS[rnd(CHARS.length)];
+
+  /* поле */
+  var wrap=el("div","prog-wrap",board);
+  var grid=el("div","prog-grid",wrap);
+  var cellSize="min("+(GH>3?11:12.5)+"vmin,"+(GH>3?68:82)+"px)";
+  wrap.style.setProperty("--pc",cellSize);
+  grid.style.gridTemplateColumns="repeat("+GW+",var(--pc))";
+  var cellEls={};
+  for(var cy=0;cy<GH;cy++)for(var cx=0;cx<GW;cx++){
+    var c=el("div","pcell",grid);
+    var k=cx+","+cy;
+    if(obst[k]) c.textContent=obst[k];
+    if(cx===tgt[0]&&cy===tgt[1]) c.innerHTML='<img src="'+IMG[goalChar]+'" alt="">';
+    cellEls[k]=c;
+  }
+  var token=document.createElement("img");
+  token.className="prog-token"; token.src=IMG.bodo; wrap.appendChild(token);
+  var bx=sx, by=sy;
+  function placeToken(anim){
+    var c=cellEls[bx+","+by];
+    if(!anim) token.style.transition="none";
+    token.style.left=c.offsetLeft+"px"; token.style.top=c.offsetTop+"px";
+    if(!anim) requestAnimationFrame(function(){ token.style.transition=""; });
+  }
+  requestAnimationFrame(function(){ placeToken(false); });
+
+  /* программа */
+  var maxSlots=steps+1;
+  var prog=[];
+  var ctr=el("div","prog-controls",board);
+  var slotsRow=el("div","pslots",ctr);
+  var slotEls=[];
+  for(var si=0;si<maxSlots;si++){ slotEls.push(el("div","pslot",slotsRow)); }
+  function paintProg(cur){
+    slotEls.forEach(function(sl,i){
+      sl.textContent=prog[i]?prog[i].ch:"";
+      sl.classList.toggle("cur", i===cur);
+    });
+  }
+  var pal=el("div","arrow-pal",ctr);
+  var DIRS=[{ch:"←",dx:-1,dy:0},{ch:"↑",dx:0,dy:-1},{ch:"↓",dx:0,dy:1},{ch:"→",dx:1,dy:0}];
+  DIRS.forEach(function(d){
+    var b=el("button","arrbtn",pal);
+    b.textContent=d.ch;
+    b.onclick=function(){
+      if(busy||prog.length>=maxSlots)return;
+      sndTap(); prog.push(d); paintProg(-1);
+    };
+  });
+  var del=el("button","arrbtn delbtn",pal);
+  del.textContent="⌫";
+  del.onclick=function(){ if(busy)return; sndTap(); prog.pop(); paintProg(-1); };
+  var run=el("button","arrbtn runbtn",pal);
+  run.textContent="▶ Пуск";
+  run.onclick=function(){
+    if(busy)return;
+    if(!prog.length){ say("Сначала разложи стрелки!"); return; }
+    busy=true;
+    var i=0;
+    function step(){
+      if(!alive)return;
+      if(i>=prog.length){
+        busy=false; paintProg(-1);
+        if(bx===tgt[0]&&by===tgt[1]) win();
+        else { say("Почти! Попробуй ещё!"); resetToken(); }
+        return;
+      }
+      paintProg(i);
+      var d=prog[i];
+      var nx=bx+d.dx, ny=by+d.dy;
+      if(nx<0||nx>=GW||ny<0||ny>=GH||obst[nx+","+ny]){
+        token.classList.add("bump"); sndNo();
+        say(obst[nx+","+ny]?"Ой! Там не пройти!":"Ой! Там край поля!");
+        later(function(){
+          token.classList.remove("bump");
+          busy=false; paintProg(-1); resetToken();
+        },900);
+        return;
+      }
+      bx=nx; by=ny; placeToken(true); tone(500+i*40,0,.1,.12,"triangle");
+      i++;
+      if(bx===tgt[0]&&by===tgt[1]){ later(function(){ busy=false; win(); },400); return; }
+      later(step,420);
+    }
+    step();
+  };
+  function resetToken(){ bx=sx; by=sy; later(function(){ placeToken(true); },350); }
+  function win(){
+    sndGood();
+    if(!starWon()) celebrate(false,progRound);
+  }
+  setTask("Разложи стрелки — и Бодо дойдёт до морфика!","Разложи стрелки по порядку, а потом нажми Пуск! Бодо пойдёт по твоей программе к морфику!");
+  say("Разложи стрелки и нажми Пуск! Помоги Бодо дойти до морфика!");
+  paintProg(-1);
+}
+
 /* ---------- навигация ---------- */
 var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound,
   names:namesRound, letters:lettersGame, word:wordGame, sudoku:sudokuRound,
-  maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound};
+  maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound,
+  prog:progRound};
 /* эти игры озвучивают задание сами */
-var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1};
+var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1};
 
 var lastStart=0;
 document.querySelectorAll(".mbtn").forEach(function(b){
