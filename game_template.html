@@ -889,9 +889,14 @@ function puzzleRound(){
     var aw=area.clientWidth, ah=area.clientHeight;
     if(!aw||!ah){ requestAnimationFrame(function(){ im.onload(); }); return; }
     var ar=im.naturalWidth/im.naturalHeight;
-    var bh=Math.min(ah*.92, (aw*.52)/ar), bw=bh*ar;
-    if(bw>aw*.52){ bw=aw*.52; bh=bw/ar; }
-    var bx0=aw*.02, by0=(ah-bh)/2;
+    /* широкий экран — поднос справа, узкий — под картинкой */
+    var horiz = aw/ah > 1.15;
+    var boxW = horiz ? aw*.46 : aw*.94;
+    var boxH = horiz ? ah*.90 : ah*.54;
+    var bw=boxW, bh=bw/ar;
+    if(bh>boxH){ bh=boxH; bw=bh*ar; }
+    var bx0 = horiz ? aw*.02 : (aw-bw)/2;
+    var by0 = horiz ? (ah-bh)/2 : ah*.01;
     var pw=bw/cols, ph=bh/rows;
     var ghost=el("div","pz-ghost",area);
     ghost.style.left=bx0+"px"; ghost.style.top=by0+"px";
@@ -904,9 +909,19 @@ function puzzleRound(){
       s.style.width=pw+"px"; s.style.height=ph+"px";
       slots.push({x:bx0+c*pw, y:by0+r*ph});
     }
-    var trayX=bx0+bw+aw*.06, trayW=aw-trayX-10;
-    var tcols=Math.max(1,Math.floor(trayW/(pw*.8+12)));
-    var idxs=shuffle(Array.apply(null,{length:cols*rows}).map(function(_,i){return i;}));
+    /* поднос: подбираем колонки и масштаб, чтобы все куски влезли */
+    var tx0 = horiz ? bx0+bw+aw*.04 : aw*.03;
+    var ty0 = horiz ? ah*.04 : by0+bh+ah*.04;
+    var tW  = horiz ? aw-tx0-10 : aw*.94;
+    var tH  = horiz ? ah*.92 : ah-ty0-8;
+    var n=cols*rows, GAP=12, ts=0, tcols=1;
+    for(var tc=1;tc<=n;tc++){
+      var tr=Math.ceil(n/tc);
+      var s2=Math.min((tW-(tc-1)*GAP)/(tc*pw), (tH-(tr-1)*GAP)/(tr*ph), .92);
+      if(s2>ts){ ts=s2; tcols=tc; }
+    }
+    ts=Math.max(ts,.15);
+    var idxs=shuffle(Array.apply(null,{length:n}).map(function(_,i){return i;}));
     var setCnt=0;
     idxs.forEach(function(pi,k){
       var r=Math.floor(pi/cols), c=pi%cols;
@@ -915,10 +930,13 @@ function puzzleRound(){
       p.style.backgroundImage="url("+IMG[ch]+")";
       p.style.backgroundSize=bw+"px "+bh+"px";
       p.style.backgroundPosition=(-c*pw)+"px "+(-r*ph)+"px";
-      var hx=trayX+(k%tcols)*(pw*.8+12);
-      var hy=by0*0.4+Math.floor(k/tcols)*(ph*.8+12);
+      /* позиция в подносе: считаем по центру куска с учётом масштаба */
+      var col=k%tcols, rowk=Math.floor(k/tcols);
+      var cx=tx0+col*(pw*ts+GAP)+pw*ts/2;
+      var cy=ty0+rowk*(ph*ts+GAP)+ph*ts/2;
+      var hx=cx-pw/2, hy=cy-ph/2;
       p.style.left=hx+"px"; p.style.top=hy+"px";
-      p.style.transform="scale(.78)";
+      p.style.transform="scale("+ts+")";
       var tgt=slots[pi], dragOff=null;
       p.addEventListener("pointerdown",function(e){
         if(p.classList.contains("set"))return;
@@ -941,12 +959,12 @@ function puzzleRound(){
         if(Math.abs(lx-tgt.x)<pw*.45 && Math.abs(ly-tgt.y)<ph*.45){
           p.style.left=tgt.x+"px"; p.style.top=tgt.y+"px";
           p.classList.add("set"); sndGood(); setCnt++;
-          if(setCnt===cols*rows){
+          if(setCnt===n){
             busy=true;
             setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,puzzleRound); },500);
           }
         } else {
-          p.style.left=hx+"px"; p.style.top=hy+"px"; p.style.transform="scale(.78)";
+          p.style.left=hx+"px"; p.style.top=hy+"px"; p.style.transform="scale("+ts+")";
         }
       });
     });
