@@ -223,6 +223,7 @@
     <button class="mbtn" data-game="puzzle"><img data-img="zub" alt="">Пазл</button>
     <button class="mbtn" data-game="simon"><img data-img="am" alt="">Повтори!</button>
     <button class="mbtn" data-game="count"><img data-img="krya" alt="">Кого больше?</button>
+    <button class="mbtn" data-game="hide"><img data-img="una" alt="">Прятки в лесу</button>
   </div>
 </div>
 
@@ -273,23 +274,42 @@ function sndGood(){ tone(523,0,.14,.22,"triangle"); tone(659,.10,.14,.22,"triang
 function sndWin(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f,i*.13,.16,.22,"triangle"); }); }
 function sndNo(){ tone(220,0,.22,.14,"sine"); }
 
-/* голос Бодо: мужской, низкий и добрый */
+/* голос Бодо: выбираем самый качественный русский голос, лёгкий бас без искажений */
 var ruVoice=null;
 function pickVoice(){
   try{
     var vs=speechSynthesis.getVoices().filter(function(v){return /^ru([-_]|$)/i.test(v.lang);});
     if(!vs.length) return;
-    var male=vs.filter(function(v){return /(yuri|юрий|dmit|дмитр|pavel|павел|male|мужск|aleksandr|александр)/i.test(v.name);})[0];
-    ruVoice = male || vs[0];
+    function score(v){
+      var s=0, n=v.name.toLowerCase();
+      if(/enhanced|premium|расширен|улучшен/.test(n)) s+=4;   /* качественные голоса iOS/macOS */
+      if(/yuri|юрий|dmit|дмитр|pavel|павел|aleksandr|александр|male|мужск/.test(n)) s+=2;
+      if(v.localService) s+=1;
+      return s;
+    }
+    vs.sort(function(a,b){ return score(b)-score(a); });
+    ruVoice=vs[0];
   }catch(e){}
 }
 try{ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }catch(e){}
 
+/* словарь ударений: знак ́ после ударной гласной */
+function fixStress(t){
+  return t
+    .replace(/([Мм])орфик/g,"$1о́рфик")
+    .replace(/Бодо Бородо/g,"Бо́до Бородо́")
+    .replace(/([^о])Бодо/g,"$1Бо́до")
+    .replace(/^Бодо/g,"Бо́до")
+    .replace(/полянк/g,"поля́нк")
+    .replace(/лишний/g,"ли́шний")
+    .replace(/букву/g,"бу́кву");
+}
+
 function say(text){
   try{
     if(!ruVoice) pickVoice();
-    var u=new SpeechSynthesisUtterance(text);
-    u.lang="ru-RU"; u.rate=.9; u.pitch=.7; u.volume=1;
+    var u=new SpeechSynthesisUtterance(fixStress(text));
+    u.lang="ru-RU"; u.rate=.95; u.pitch=.85; u.volume=1;
     if(ruVoice) u.voice=ruVoice;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
@@ -1086,15 +1106,220 @@ function countRound(){
   });
 }
 
+/* ---------- игра 14: прятки в лесу (пиксельная, с анимацией) ---------- */
+function hideGame(){
+  board.innerHTML="";
+  var wrap=el("div","",board); wrap.id="mazeWrap";
+  var cv=el("canvas","",wrap);
+  cv.style.borderRadius="18px"; cv.style.touchAction="none";
+  var ctx=cv.getContext("2d");
+  var alive=true, raf=null;
+  cleanup=function(){ alive=false; if(raf)cancelAnimationFrame(raf); };
+
+  /* пиксельный Бодо, 20×14, два кадра ходьбы */
+  var PAL={B:"#9FDCEA",O:"#F2691F",o:"#FF8B4D",D:"#2E3A48",W:"#FFF7EE",L:"#BFE9F2"};
+  var BODO0=[
+    "......BBBBBBB.......",
+    "....BBBBBBBBBBB.....",
+    "...BBBBBBBBBBBBB....",
+    "...BBWDBBBBBWDBB....",
+    "...BBWWBBBBBWWBB....",
+    "....BBBBBBBBBB......",
+    "..OOoOOoOOoOOoOO....",
+    ".OOOoOOoOOoOOoOOO...",
+    "OOOOoOOoOOoOOoOOOO..",
+    "OOOOoOOoOOoOOoOOOO..",
+    "OOOOoOOoOOoOOoOOOO..",
+    ".OOOoOOoOOoOOoOOO...",
+    "....LL......LL......",
+    "....LL......LL......"
+  ];
+  var BODO1=BODO0.slice(0,12).concat([
+    "......LL..LL........",
+    "......LL..LL........"
+  ]);
+  var MCOLORS={am:"#FFC021",zhu:"#63C8E8",zub:"#FFD23F",ino:"#9C6BC7",kvak:"#7CC24B",
+    krya:"#F05A5A",nos:"#3FA9E0",osya:"#F5A0C0",una:"#35C79A",chupa:"#C77BD6"};
+
+  var W,H,S,groundY,worldW;
+  var bodo={x:80,dir:1,walking:false,ft:0};
+  var camX=0, targetX=null, pendingObj=null;
+  var objs=[], morphTotal=0, found=0, doneRound=false;
+
+  function drawSprite(rows,x,y,flip){
+    var w=rows[0].length;
+    for(var r=0;r<rows.length;r++)for(var c=0;c<w;c++){
+      var ch=rows[r][c];
+      if(ch==="."||ch===" ")continue;
+      ctx.fillStyle=PAL[ch];
+      ctx.fillRect(Math.round(x+(flip?w-1-c:c)*S), Math.round(y+r*S), S+.5, S+.5);
+    }
+  }
+  function px(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
+  function drawMorph(id,x,y,bounce){
+    var col=MCOLORS[id];
+    var b=bounce?Math.abs(Math.sin(performance.now()/240))*2*S:0;
+    y-=b;
+    px(x+S,y,6*S,S,col); px(x,y+S,8*S,5*S,col); px(x+S,y+6*S,6*S,S,col);
+    px(x+2*S,y+2*S,S,S,"#2E3A48"); px(x+5*S,y+2*S,S,S,"#2E3A48");
+    px(x+2*S,y+4*S,4*S,S,"#F2699C");
+  }
+  function drawObj(o){
+    var ox=o.x-camX+(o.shakeT>0?Math.sin(o.shakeT*40)*S:0);
+    var g=groundY;
+    if(o.type==="pine"){
+      px(ox+5*S,g-4*S,3*S,4*S,"#8A5A33");
+      var wds=[13,11,9,7,5,3];
+      for(var i=0;i<wds.length;i++){
+        px(ox+(6.5-wds[i]/2)*S, g-(6+i*2)*S, wds[i]*S, 2*S, i%2?"#4FA648":"#3C8F3E");
+      }
+    } else if(o.type==="oak"){
+      px(ox+5*S,g-5*S,3*S,5*S,"#8A5A33");
+      px(ox+2*S,g-9*S,9*S,4*S,"#57B04B");
+      px(ox+1*S,g-12*S,11*S,3*S,"#4FA648");
+      px(ox+3*S,g-14*S,7*S,2*S,"#57B04B");
+    } else if(o.type==="rock"){
+      px(ox+2*S,g-3*S,9*S,3*S,"#8F9AA3");
+      px(ox+3*S,g-5*S,7*S,2*S,"#A6B1B9");
+      px(ox+4*S,g-6*S,5*S,S,"#B8C2C9");
+    } else {
+      px(ox+1*S,g-3*S,11*S,3*S,"#57B04B");
+      px(ox+2*S,g-5*S,9*S,2*S,"#6BC25E");
+      px(ox+4*S,g-6*S,5*S,S,"#7FD06F");
+    }
+    if(o.revealT>0){
+      var t=Math.min(o.revealT,1);
+      var jump=Math.sin(t*Math.PI)*14*S;
+      var mx=ox+o.wpx+(o.side>0?S:-9*S);
+      drawMorph(o.morph, mx, g-8*S-jump*(1-t*.5), t>=1);
+    }
+  }
+  function setup(){
+    var r=wrap.getBoundingClientRect();
+    if(!r.width||!r.height){ requestAnimationFrame(setup); return; }
+    cv.width=r.width; cv.height=r.height;
+    W=cv.width; H=cv.height;
+    S=Math.max(3,Math.floor(H/85));
+    groundY=H-Math.floor(H*.12);
+    worldW=Math.floor(W*2.6);
+    ctx.imageSmoothingEnabled=false;
+    newRound();
+    raf=requestAnimationFrame(frame);
+  }
+  function newRound(){
+    found=0; doneRound=false; objs=[];
+    var n=6+Math.min(stars,3)*2;
+    morphTotal=3+Math.min(stars,2);
+    var picks=pick(CHARS,morphTotal), pi=0;
+    var withM=shuffle(Array.apply(null,{length:n}).map(function(_,i){return i;})).slice(0,morphTotal);
+    var slotW=(worldW-260)/n;
+    var kinds=["pine","oak","rock","bush"];
+    for(var i=0;i<n;i++){
+      var t=kinds[rnd(kinds.length)];
+      var o={type:t, x:200+i*slotW+rnd(Math.max(1,slotW*.35)),
+        wpx:13*(t==="pine"?1:1)*0, hasM:withM.indexOf(i)>=0,
+        morph:null, searched:false, shakeT:0, revealT:0, side:1};
+      o.wpx=13*S;
+      if(o.hasM){ o.morph=picks[pi++]; }
+      objs.push(o);
+    }
+    bodo.x=60; camX=0; targetX=null; pendingObj=null;
+    setTask("Найди морфиков! (0 из "+morphTotal+")","Морфики спрятались за деревьями и камнями! Иди и нажимай на них, чтобы поискать!");
+    say("Морфики спрятались в лесу! Найди их! Нажимай на деревья и камни!");
+  }
+  function search(o){
+    if(o.searched||o.shakeT>0)return;
+    o.shakeT=.6; o.side = bodo.x<o.x ? 1 : -1;
+    setTimeout(function(){
+      if(!alive)return;
+      o.searched=true;
+      if(o.hasM){
+        o.revealT=.01; found++;
+        sndGood(); say(NAMES[o.morph]+"! Нашёл!");
+        setTask("Найди морфиков! ("+found+" из "+morphTotal+")","Ищи дальше! Нажимай на деревья и камни!");
+        if(found>=morphTotal && !doneRound){
+          doneRound=true;
+          setTimeout(function(){
+            if(!alive)return;
+            if(!starWon()) celebrate(false,newRound);
+          },1400);
+        }
+      } else { tone(300,0,.15,.12,"sine"); tone(240,.14,.2,.12,"sine"); }
+    },620);
+  }
+  function tap(e){
+    var r=cv.getBoundingClientRect();
+    var cx=(e.touches&&e.touches.length?e.touches[0].clientX:e.clientX)-r.left;
+    var wx=cx+camX;
+    var hit=null;
+    for(var i=0;i<objs.length;i++){
+      var o=objs[i];
+      if(wx>o.x-S && wx<o.x+o.wpx+S){ hit=o; break; }
+    }
+    sndTap();
+    if(hit){
+      if(Math.abs((hit.x+hit.wpx/2)-(bodo.x+10*S))<16*S){ search(hit); targetX=null; pendingObj=null; }
+      else { targetX=hit.x+ (bodo.x<hit.x ? -12*S : hit.wpx+2*S); pendingObj=hit; }
+    } else { targetX=wx-10*S; pendingObj=null; }
+  }
+  cv.addEventListener("pointerdown",tap);
+  cv.addEventListener("touchstart",function(e){ e.preventDefault(); tap(e); },{passive:false});
+
+  var last=performance.now();
+  function frame(now){
+    if(!alive)return;
+    var dt=Math.min((now-last)/1000,.05); last=now;
+    /* движение */
+    if(targetX!==null){
+      var d=targetX-bodo.x;
+      if(Math.abs(d)>3*S){
+        bodo.dir=d>0?1:-1;
+        bodo.x+=bodo.dir*Math.min(Math.abs(d), 30*S*dt*7);
+        bodo.walking=true; bodo.ft+=dt*9;
+      } else {
+        bodo.walking=false; targetX=null;
+        if(pendingObj){ var o2=pendingObj; pendingObj=null; search(o2); }
+      }
+    } else bodo.walking=false;
+    bodo.x=Math.max(10,Math.min(worldW-22*S,bodo.x));
+    camX=Math.max(0,Math.min(bodo.x-W*.42, worldW-W));
+    objs.forEach(function(o){
+      if(o.shakeT>0)o.shakeT-=dt;
+      if(o.revealT>0&&o.revealT<1)o.revealT=Math.min(1,o.revealT+dt*1.6);
+    });
+    /* отрисовка */
+    ctx.clearRect(0,0,W,H);
+    px(0,0,W,H,"rgba(255,255,255,.35)");
+    /* дальние холмы (параллакс) */
+    ctx.fillStyle="#BFE3C0";
+    for(var hx=-1;hx<5;hx++){
+      var bx=hx*W*.55-(camX*.4)%(W*.55);
+      ctx.beginPath(); ctx.ellipse(bx,groundY,W*.4,H*.16,0,Math.PI,0); ctx.fill();
+    }
+    px(0,groundY,W,H-groundY,"#6FBA4E");
+    px(0,groundY,W,2*S,"#5FA636");
+    objs.forEach(drawObj);
+    var bob=bodo.walking?0:Math.sin(now/300)*S*.6;
+    drawSprite(bodo.walking&&Math.floor(bodo.ft)%2?BODO1:BODO0, bodo.x-camX, groundY-14*S+bob, bodo.dir<0);
+    raf=requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(setup);
+}
+
 /* ---------- навигация ---------- */
 var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound,
   names:namesRound, letters:lettersGame, word:wordGame, sudoku:sudokuRound,
-  maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound};
+  maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound,
+  hide:hideGame};
 /* эти игры озвучивают задание сами */
-var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1};
+var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, hide:1};
 
+var lastStart=0;
 document.querySelectorAll(".mbtn").forEach(function(b){
   b.onclick=function(){
+    var now=Date.now();
+    if(now-lastStart<600) return;   /* защита от двойного срабатывания */
+    lastStart=now;
     ac(); sndTap();
     if(cleanup){ cleanup(); cleanup=null; }
     current=b.dataset.game; stars=0; busy=false; paintStars();
