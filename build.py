@@ -70,16 +70,22 @@ def seq(*notes):
     return out
 
 
+def lead(samples, dur=0.09):
+    """Тихая подложка в начале: iOS съедает первые миллисекунды при открытии
+    аудиотракта — пусть съедает тишину, а не начало ноты."""
+    return list(silence_samples(dur)) + list(samples)
+
+
 SOUNDS = {
     "silence": list(silence_samples(0.05)),
-    "tap": list(tone_samples(520, 0.1, vol=0.3)),
-    "no": list(tone_samples(220, 0.25, vol=0.35, shape="sine")),
-    "good": seq((523, 0.14), (659, 0.14), (784, 0.3)),
-    "win": seq((523, 0.14), (659, 0.14), (784, 0.14), (1047, 0.18), (784, 0.14), (1047, 0.3)),
-    "n0": list(tone_samples(262, 0.35)),
-    "n1": list(tone_samples(330, 0.35)),
-    "n2": list(tone_samples(392, 0.35)),
-    "n3": list(tone_samples(494, 0.35)),
+    "tap": lead(tone_samples(520, 0.1, vol=0.35)),
+    "no": lead(tone_samples(220, 0.25, vol=0.4, shape="sine")),
+    "good": lead(seq((523, 0.14), (659, 0.14), (784, 0.3))),
+    "win": lead(seq((523, 0.14), (659, 0.14), (784, 0.14), (1047, 0.18), (784, 0.14), (1047, 0.3))),
+    "n0": lead(tone_samples(262, 0.4, vol=0.6)),
+    "n1": lead(tone_samples(330, 0.4, vol=0.6)),
+    "n2": lead(tone_samples(392, 0.4, vol=0.6)),
+    "n3": lead(tone_samples(494, 0.4, vol=0.6)),
 }
 
 html = (HERE / "game_template.html").read_text()

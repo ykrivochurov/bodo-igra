@@ -290,21 +290,28 @@ var SNDDATA={
   good:"__SND_good__", win:"__SND_win__",
   n0:"__SND_n0__", n1:"__SND_n1__", n2:"__SND_n2__", n3:"__SND_n3__"
 };
-var POOL=[], POOL_N=6, poolIdx=0, poolReady=false;
+/* по одному предзагруженному плееру на каждый звук: без смены src
+   в момент нажатия — иначе первый звук запаздывает или глотается */
+var AUD={}, poolReady=false;
 function unlockPool(){
   if(poolReady||!IS_IOS)return;
   poolReady=true;
-  for(var i=0;i<POOL_N;i++){
+  Object.keys(SNDDATA).forEach(function(k){
     var a=new Audio(SNDDATA.silence);
     try{ var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
-    POOL.push(a);
-  }
+    AUD[k]=a;
+  });
+  setTimeout(function(){
+    Object.keys(AUD).forEach(function(k){
+      try{ AUD[k].src=SNDDATA[k]; AUD[k].load(); }catch(e){}
+    });
+  },350);
 }
 function playSnd(name,delayMs){
   function go(){
-    if(!POOL.length)return;
-    var a=POOL[poolIdx++%POOL_N];
-    try{ a.src=SNDDATA[name]; var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+    var a=AUD[name];
+    if(!a)return;
+    try{ a.currentTime=0; var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
   }
   if(delayMs) setTimeout(go,delayMs); else go();
 }
@@ -379,6 +386,9 @@ function say(text){
     var u=new SpeechSynthesisUtterance(fixStress(text));
     u.lang="ru-RU"; u.rate=.95; u.pitch=1; u.volume=1;
     if(ruVoice) u.voice=ruVoice;
+    /* iOS: после речи аудиотракт закрывается и съедает начало следующего
+       звука — сразу «прогреваем» его тихим wav */
+    u.onend=u.onerror=function(){ if(IS_IOS&&poolReady) playSnd("silence"); };
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
 }
