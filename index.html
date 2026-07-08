@@ -18,14 +18,18 @@
     --pink:#F2699C;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-  html,body{height:100%;overflow:hidden;position:fixed;inset:0;width:100%}
+  html{height:100%;overflow:hidden}
   body{
+    height:100%;width:100%;overflow:hidden;position:fixed;inset:0;
     font-family:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Comic Sans MS",system-ui,sans-serif;
-    background:linear-gradient(var(--sky) 0%,var(--sky2) 78%,var(--leaf) 78%,var(--leaf-d) 100%);
     color:var(--ink);
     touch-action:manipulation;
   }
   img{pointer-events:none;-webkit-user-drag:none}
+
+  /* фон отдельным слоем: фон на body не отрисовывается на iPadOS при position:fixed */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:linear-gradient(var(--sky) 0%,var(--sky2) 78%,var(--leaf) 78%,var(--leaf-d) 100%)}
 
   /* декорации */
   .sun{position:fixed;top:-9vmin;right:-9vmin;width:30vmin;height:30vmin;border-radius:50%;
@@ -221,7 +225,7 @@
 </head>
 <body>
 
-<div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
+<div class="bg"></div><div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
 
 <!-- МЕНЮ -->
 <div id="menu" class="screen on">
@@ -281,8 +285,27 @@ var NAMES={am:"Ам",zhu:"Жу",zub:"Зуб",ino:"Ино",kvak:"Квак",krya:"
 document.querySelectorAll("img[data-img]").forEach(function(im){ im.src=IMG[im.dataset.img]; });
 
 /* ---------- звук ---------- */
-var actx=null;
-function ac(){ if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==="suspended") actx.resume(); return actx; }
+var actx=null, audioUnlocked=false;
+function ac(){
+  if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); }
+  if(actx.state!=="running"){ try{ actx.resume(); }catch(e){} }
+  return actx;
+}
+/* iOS: разбудить аудио при каждом касании (голос синтеза усыпляет WebAudio),
+   а при первом — проиграть тихий буфер, чтобы разблокировать звук */
+function wakeAudio(){
+  var a=ac();
+  if(!audioUnlocked){
+    try{
+      var buf=a.createBuffer(1,1,22050);
+      var src=a.createBufferSource();
+      src.buffer=buf; src.connect(a.destination); src.start(0);
+      audioUnlocked=true;
+    }catch(e){}
+  }
+}
+document.addEventListener("pointerdown",wakeAudio,true);
+document.addEventListener("touchstart",wakeAudio,true);
 function tone(f,t0,dur,vol,type){
   var a=ac(),o=a.createOscillator(),g=a.createGain();
   o.type=type||"sine"; o.frequency.value=f;
