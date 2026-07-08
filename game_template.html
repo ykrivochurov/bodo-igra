@@ -279,29 +279,56 @@ var NAMES={am:"Ам",zhu:"Жу",zub:"Зуб",ino:"Ино",kvak:"Квак",krya:"
 
 document.querySelectorAll("img[data-img]").forEach(function(im){ im.src=IMG[im.dataset.img]; });
 
-/* ---------- звук ---------- */
-var actx=null, audioUnlocked=false;
+/* ---------- звук ----------
+   iPadOS: WebAudio глохнет после синтеза речи, поэтому там все эффекты
+   играем WAV-файлами через пул заранее разблокированных Audio-элементов
+   (они идут по тому же аудиотракту, что и голос). На десктопе — WebAudio. */
+var IS_IOS = /iP(ad|hone|od)/.test(navigator.userAgent) ||
+             (navigator.maxTouchPoints>1 && /Mac/.test(navigator.platform));
+var SNDDATA={
+  silence:"__SND_silence__", tap:"__SND_tap__", no:"__SND_no__",
+  good:"__SND_good__", win:"__SND_win__",
+  n0:"__SND_n0__", n1:"__SND_n1__", n2:"__SND_n2__", n3:"__SND_n3__"
+};
+var POOL=[], POOL_N=6, poolIdx=0, poolReady=false;
+function unlockPool(){
+  if(poolReady||!IS_IOS)return;
+  poolReady=true;
+  for(var i=0;i<POOL_N;i++){
+    var a=new Audio(SNDDATA.silence);
+    try{ var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+    POOL.push(a);
+  }
+}
+function playSnd(name,delayMs){
+  function go(){
+    if(!POOL.length)return;
+    var a=POOL[poolIdx++%POOL_N];
+    try{ a.src=SNDDATA[name]; var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+  }
+  if(delayMs) setTimeout(go,delayMs); else go();
+}
+
+var actx=null;
 function ac(){
   if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); }
   if(actx.state!=="running"){ try{ actx.resume(); }catch(e){} }
   return actx;
 }
-/* iOS: разбудить аудио при каждом касании (голос синтеза усыпляет WebAudio),
-   а при первом — проиграть тихий буфер, чтобы разблокировать звук */
-function wakeAudio(){
-  var a=ac();
-  if(!audioUnlocked){
-    try{
-      var buf=a.createBuffer(1,1,22050);
-      var src=a.createBufferSource();
-      src.buffer=buf; src.connect(a.destination); src.start(0);
-      audioUnlocked=true;
-    }catch(e){}
-  }
-}
-document.addEventListener("pointerdown",wakeAudio,true);
-document.addEventListener("touchstart",wakeAudio,true);
+document.addEventListener("pointerup",unlockPool,true);
+document.addEventListener("touchend",unlockPool,true);
+
+var NOTE_FREQS=[262,330,392,494];
 function tone(f,t0,dur,vol,type){
+  if(IS_IOS){
+    var best=0,bd=1e9;
+    for(var i=0;i<NOTE_FREQS.length;i++){
+      var d=Math.abs(NOTE_FREQS[i]-f);
+      if(d<bd){ bd=d; best=i; }
+    }
+    playSnd("n"+best,(t0||0)*1000);
+    return;
+  }
   var a=ac(),o=a.createOscillator(),g=a.createGain();
   o.type=type||"sine"; o.frequency.value=f;
   g.gain.setValueAtTime(0.0001,a.currentTime+t0);
@@ -310,10 +337,10 @@ function tone(f,t0,dur,vol,type){
   o.connect(g); g.connect(a.destination);
   o.start(a.currentTime+t0); o.stop(a.currentTime+t0+dur+.05);
 }
-function sndTap(){ tone(520,0,.09,.12,"triangle"); }
-function sndGood(){ tone(523,0,.14,.22,"triangle"); tone(659,.10,.14,.22,"triangle"); tone(784,.20,.25,.22,"triangle"); }
-function sndWin(){ [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f,i*.13,.16,.22,"triangle"); }); }
-function sndNo(){ tone(220,0,.22,.14,"sine"); }
+function sndTap(){ if(IS_IOS){ playSnd("tap"); return; } tone(520,0,.09,.12,"triangle"); }
+function sndGood(){ if(IS_IOS){ playSnd("good"); return; } tone(523,0,.14,.22,"triangle"); tone(659,.10,.14,.22,"triangle"); tone(784,.20,.25,.22,"triangle"); }
+function sndWin(){ if(IS_IOS){ playSnd("win"); return; } [523,659,784,1047,784,1047].forEach(function(f,i){ tone(f,i*.13,.16,.22,"triangle"); }); }
+function sndNo(){ if(IS_IOS){ playSnd("no"); return; } tone(220,0,.22,.14,"sine"); }
 
 /* голос Бодо: выбираем самый качественный русский голос, лёгкий бас без искажений */
 var ruVoice=null;
