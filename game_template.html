@@ -290,12 +290,15 @@ var SNDDATA={
   good:"__SND_good__", win:"__SND_win__",
   n0:"__SND_n0__", n1:"__SND_n1__", n2:"__SND_n2__", n3:"__SND_n3__"
 };
+/* живая озвучка: фраза -> mp3-файл (генерирует gen_voice.py, вшивает build.py) */
+var VOICE_MAP=__VOICE_MAP__;
 /* предзагруженные плееры: по несколько экземпляров на ноты, чтобы не
    перезапускать уже играющий элемент (iOS тогда стартует с тихого хвоста).
    Плюс беззвучный «якорь» loop — держит аудиосессию активной, чтобы система
    полностью возвращала громкость после каждой фразы голоса (иначе duck
    накапливается и звуки становятся всё тише). */
 var AUD={}, poolReady=false, keeper=null;
+var vPool=[], vIdx=0, curVoice=null;
 var SND_COPIES={n0:3,n1:3,n2:3,n3:3,tap:2};
 function unlockPool(){
   if(poolReady||!IS_IOS)return;
@@ -303,6 +306,11 @@ function unlockPool(){
   keeper=new Audio(SNDDATA.silence);
   keeper.loop=true;
   try{ var kp=keeper.play(); if(kp&&kp.catch)kp.catch(function(){}); }catch(e){}
+  for(var vi=0;vi<2;vi++){
+    var v=new Audio(SNDDATA.silence);
+    try{ var vp=v.play(); if(vp&&vp.catch)vp.catch(function(){}); }catch(e){}
+    vPool.push(v);
+  }
   Object.keys(SNDDATA).forEach(function(k){
     var n=SND_COPIES[k]||1;
     AUD[k]=[];
@@ -399,17 +407,40 @@ function fixStress(t){
     .replace(/букву/g,"бу́кву");
 }
 
-function say(text){
+function speakTTS(text){
   try{
     if(!ruVoice) pickVoice();
     var u=new SpeechSynthesisUtterance(fixStress(text));
     u.lang="ru-RU"; u.rate=.95; u.pitch=1; u.volume=1;
     if(ruVoice) u.voice=ruVoice;
-    /* iOS: после речи аудиотракт закрывается и съедает начало следующего
-       звука — сразу «прогреваем» его тихим wav */
     u.onend=u.onerror=function(){ if(IS_IOS&&poolReady) playSnd("silence"); };
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    speechSynthesis.speak(u);
   }catch(e){}
+}
+function say(text){
+  try{ speechSynthesis.cancel(); }catch(e){}
+  if(curVoice){ try{ curVoice.pause(); }catch(e){} curVoice=null; }
+  /* живой голос из файла, если фраза записана */
+  var f=VOICE_MAP&&VOICE_MAP[text];
+  if(f){
+    var a=null;
+    if(IS_IOS){
+      if(vPool.length) a=vPool[vIdx++%vPool.length];
+    } else {
+      if(!vPool.length) vPool.push(new Audio());
+      a=vPool[0];
+    }
+    if(a){
+      try{
+        a.src=f;
+        var p=a.play();
+        if(p&&p.catch) p.catch(function(){ speakTTS(text); });
+        curVoice=a;
+        return;
+      }catch(e){}
+    }
+  }
+  speakTTS(text);
 }
 
 /* ---------- утилиты ---------- */

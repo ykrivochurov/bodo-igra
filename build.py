@@ -94,8 +94,19 @@ for key, fn in MAPPING.items():
     html = html.replace(f"__IMG_{key}__", f"data:image/png;base64,{data}")
 for key, samples in SOUNDS.items():
     html = html.replace(f"__SND_{key}__", make_wav(samples))
+
+# живая озвучка: карта фраз (для artifact-сборки файлов нет — пустая карта,
+# игра откатится на системный синтез)
+voice_map_path = HERE / "snd" / "voice_map.json"
+if "--artifact" not in sys.argv and voice_map_path.exists():
+    voice_map = voice_map_path.read_text(encoding="utf-8")
+else:
+    voice_map = "{}"
+html = html.replace("__VOICE_MAP__", voice_map)
+
 assert "__IMG_" not in html, "остался незаменённый плейсхолдер картинки"
 assert "__SND_" not in html, "остался незаменённый плейсхолдер звука"
+assert "__VOICE_MAP__" not in html, "остался плейсхолдер карты озвучки"
 
 if "--artifact" not in sys.argv:
     html = ('<!DOCTYPE html>\n<html lang="ru">\n<head>\n'
