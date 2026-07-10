@@ -399,7 +399,7 @@ try{ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }catch(e){}
 function fixStress(t){
   return t
     .replace(/([Мм])орфик/g,"$1о́рфик")
-    .replace(/Бодо Бородо/g,"Бо́до Бородо́")
+    .replace(/Бодо Бородо/g,"Бо́до Боро́до")
     .replace(/([^о])Бодо/g,"$1Бо́до")
     .replace(/^Бодо/g,"Бо́до")
     .replace(/полянк/g,"поля́нк")
@@ -1401,7 +1401,7 @@ document.querySelectorAll(".mbtn").forEach(function(b){
 });
 document.getElementById("homeBtn").onclick=function(){ sndTap(); show(menu); };
 
-document.getElementById("menuBubble").onclick=function(){ ac(); say("Привет! Я Бо́до Бородо́! Поиграем?"); };
+document.getElementById("menuBubble").onclick=function(){ ac(); say("Привет! Я Бо́до Боро́до! Поиграем?"); };
 
 /* двойной тап-зум off */
 document.addEventListener("dblclick",function(e){ e.preventDefault(); },{passive:false});

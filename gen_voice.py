@@ -15,7 +15,7 @@ import sys
 import edge_tts
 
 VOICE = "ru-RU-DmitryNeural"
-RATE = "-8%"
+RATE = "+3%"
 if "--voice" in sys.argv:
     VOICE = sys.argv[sys.argv.index("--voice") + 1]
 
@@ -41,7 +41,7 @@ def add(key, tts=None):
 for p in PRAISE:
     add(p)
 add("Ура! Ты победил! Ты настоящий молодец!")
-add("Привет! Я Бо́до Бородо́! Поиграем?")
+add("Привет! Я Бо́до Боро́до! Поиграем?")
 
 # инструкции игр
 add("Найди одинаковые карточки. Где спрятались пары?")
@@ -98,7 +98,7 @@ for a in range(2, 9):
 def tts_input(key, custom):
     t = custom if custom is not None else key
     t = re.sub(r"([Мм])орфик", "\\1о́рфик", t)
-    t = t.replace("Бодо Бородо", "Бо́до Бородо́")
+    t = t.replace("Бодо Бородо", "Бо́до Боро́до")
     t = re.sub(r"(?<!о́)(?<!о)Бодо", "Бо́до", t)
     t = t.replace("полянк", "поля́нк")
     return t
@@ -108,7 +108,7 @@ async def gen():
     mapping = {}
     todo = []
     for key, custom in phrases.items():
-        h = hashlib.md5((VOICE + "|" + tts_input(key, custom)).encode()).hexdigest()[:12]
+        h = hashlib.md5((VOICE + "|" + RATE + "|" + tts_input(key, custom)).encode()).hexdigest()[:12]
         fn = f"{h}.mp3"
         mapping[key] = "snd/" + fn
         path = OUT / fn
