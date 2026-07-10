@@ -153,7 +153,7 @@
   #mazeWrap{position:relative;flex:1;width:100%;max-width:900px;min-height:0;display:flex;
     align-items:center;justify-content:center;touch-action:none}
   #mazeCanvas{border-radius:18px;background:rgba(255,255,255,.75)}
-  .mtoken,.mgoal{position:absolute;pointer-events:none;transition:left .12s linear,top .12s linear}
+  .mtoken,.mgoal{position:absolute;pointer-events:none;transition:left .12s linear,top .12s linear;object-fit:contain}
 
   /* что изменилось: занавес-облако */
   .curtain{position:absolute;inset:-2vmin;background:#fff;border-radius:28px;opacity:0;transition:opacity .45s;
@@ -312,9 +312,9 @@ var VOICE_MAP={
 "Нажми на имя, а потом на морфика, которого так зовут!": "snd/2e232d0bf694.mp3",
 "Расставь морфиков так, чтобы в каждой строке и каждом столбике никто не повторялся! Сначала выбери морфика внизу.": "snd/17d955984cd2.mp3",
 "Веди Бо́до пальцем по дорожкам лабиринта к морфику!": "snd/498f27b1975e.mp3",
-"Посмотри внимательно и запомни, кто стоит на полянке!": "snd/0a1485180444.mp3",
-"Запомни, кто на полянке!": "snd/41f68f7c72f9.mp3",
-"Кто-то спрятался! Кого не хватает на полянке?": "snd/ac0c7063432f.mp3",
+"Посмотри внимательно и запомни, кто стоит на полянке!": "snd/2c5b57277115.mp3",
+"Запомни, кто на полянке!": "snd/f88b65e47bb7.mp3",
+"Кто-то спрятался! Кого не хватает на полянке?": "snd/ff9eb5d6ec1b.mp3",
 "Кого не хватает?": "snd/6e010469136f.mp3",
 "Перетаскивай кусочки на картинку, чтобы собрать её целиком!": "snd/8b05a326fc91.mp3",
 "Ой! Не тот морфик. Смотри ещё раз и повторяй!": "snd/21b4b988c45b.mp3",
@@ -322,8 +322,8 @@ var VOICE_MAP={
 "Смотри внимательно, кто прыгает, и запоминай порядок!": "snd/d57630795b47.mp3",
 "Теперь ты! Нажимай на морфиков в том же порядке!": "snd/7b58b476fc52.mp3",
 "Теперь ты!": "snd/8215a1e0c53f.mp3",
-"Посчитай! На какой полянке морфиков больше? Нажми на неё!": "snd/e7f8f562aba0.mp3",
-"Посчитай! На какой полянке морфиков меньше? Нажми на неё!": "snd/bb1c853f894b.mp3",
+"Посчитай! На какой полянке морфиков больше? Нажми на неё!": "snd/b63f393b4244.mp3",
+"Посчитай! На какой полянке морфиков меньше? Нажми на неё!": "snd/40c554379e7b.mp3",
 "Где морфиков больше?": "snd/aaa2b8457035.mp3",
 "Где морфиков меньше?": "snd/c4430be75afe.mp3",
 "Разложи стрелки по порядку, а потом нажми Пуск! Бодо пойдёт по твоей программе к морфику!": "snd/e0cc86001d77.mp3",
@@ -584,7 +584,6 @@ function fixStress(t){
     .replace(/Бодо Бородо/g,"Бо́до Боро́до")
     .replace(/([^о])Бодо/g,"$1Бо́до")
     .replace(/^Бодо/g,"Бо́до")
-    .replace(/полянк/g,"поля́нк")
     .replace(/лишний/g,"ли́шний")
     .replace(/букву/g,"бу́кву");
 }
@@ -1101,14 +1100,16 @@ function mazeRound(){
     ctx.stroke();
     var cr=cv.getBoundingClientRect();
     ox=cr.left-r.left+4; oy=cr.top-r.top+4;
-    token.style.width=(cs*.78)+"px";
-    goal.style.width=(cs*.72)+"px";
+    /* оба персонажа в одинаковой квадратной рамке от клетки — единый масштаб,
+       который сам уменьшается с ростом лабиринта */
+    token.style.width=token.style.height=(cs*.8)+"px";
+    goal.style.width=goal.style.height=(cs*.8)+"px";
     placeAt(goal,gx,gy);
     placeAt(token,px,py);
   }
   function placeAt(elm,x,y){
-    elm.style.left=(ox+x*cs+cs*.11)+"px";
-    elm.style.top=(oy+y*cs+cs*.11)+"px";
+    elm.style.left=(ox+x*cs+cs*.1)+"px";
+    elm.style.top=(oy+y*cs+cs*.1)+"px";
   }
   function open(x,y,dx,dy){
     var w=walls[y][x];

@@ -100,7 +100,6 @@ def tts_input(key, custom):
     t = re.sub(r"([Мм])орфик", "\\1о́рфик", t)
     t = t.replace("Бодо Бородо", "Бо́до Боро́до")
     t = re.sub(r"(?<!о́)(?<!о)Бодо", "Бо́до", t)
-    t = t.replace("полянк", "поля́нк")
     return t
 
 
