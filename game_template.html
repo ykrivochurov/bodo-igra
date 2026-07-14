@@ -209,6 +209,21 @@
   .runbtn{background:#7DC24B;color:#fff;font-size:min(4vmin,26px);padding:0 3vmin;width:auto}
   .delbtn{background:#F2699C;color:#fff}
 
+  /* кроссворд */
+  .cw-grid{display:grid;gap:.5vmin;flex:none}
+  .cw-cell{background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:var(--ink);box-shadow:0 .25vmin 0 rgba(46,58,72,.12);cursor:pointer;
+    width:var(--cw);height:var(--cw);font-size:calc(var(--cw)*.62)}
+  .cw-cell.blank{visibility:hidden}
+  .cw-cell.can{background:#FFE9C7}
+  .cw-cell.wrong{animation:shake .45s;background:#FBDADA}
+  .cw-bank{display:flex;flex-wrap:wrap;gap:1.2vmin;justify-content:center;max-width:92vw}
+  .cw-chip{border:none;border-radius:14px;background:#fff;color:var(--orange-d);font-family:inherit;
+    font-size:min(3.4vmin,22px);font-weight:800;padding:1.2vmin 2vmin;letter-spacing:.12em;
+    box-shadow:0 .5vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .cw-chip:active{transform:translateY(.3vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
+  .cw-chip.used{opacity:.22;pointer-events:none}
+
   /* ===== ПОХВАЛА ===== */
   #praise{position:fixed;inset:0;background:rgba(255,255,255,.75);backdrop-filter:blur(4px);
     display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.5vmin;z-index:50}
@@ -246,6 +261,7 @@
     <button class="mbtn" data-game="simon"><img data-img="am" alt="">Повтори!</button>
     <button class="mbtn" data-game="count"><img data-img="krya" alt="">Кого больше?</button>
     <button class="mbtn" data-game="prog"><img data-img="nos" alt="">Запрограммируй!</button>
+    <button class="mbtn" data-game="cw"><img data-img="zub" alt="">Кроссворд</button>
   </div>
 </div>
 
@@ -1379,13 +1395,166 @@ function progRound(){
   paintProg(-1);
 }
 
+/* ---------- игра 15: кроссворд ---------- */
+/* раскладки проверены генератором: буквы на пересечениях согласованы */
+var CW_LEVELS=[
+ [{"w":"КОТ","r":1,"c":0,"d":0},{"w":"СОК","r":0,"c":1,"d":1}],
+ [{"w":"ЗЕБРА","r":0,"c":0,"d":0},{"w":"АРБУЗ","r":0,"c":4,"d":1},{"w":"ЗОНТ","r":0,"c":0,"d":1}],
+ [{"w":"МАШИНА","r":0,"c":0,"d":0},{"w":"ШАРИК","r":0,"c":2,"d":1},{"w":"НОСОК","r":0,"c":4,"d":1}],
+ [{"w":"СОБАКА","r":2,"c":0,"d":0},{"w":"БАНАН","r":2,"c":2,"d":1},{"w":"КНИГА","r":2,"c":4,"d":1},{"w":"АИСТ","r":0,"c":0,"d":1}],
+ [{"w":"СПУТНИК","r":4,"c":2,"d":0},{"w":"РАКЕТА","r":0,"c":5,"d":1},{"w":"ЗВЕЗДА","r":1,"c":0,"d":0},{"w":"КОСМОС","r":4,"c":8,"d":1},{"w":"ЗЕМЛЯ","r":1,"c":0,"d":1}],
+ [{"w":"ДЕРЕВО","r":5,"c":0,"d":0},{"w":"ОБЛАКО","r":5,"c":5,"d":1},{"w":"СОЛНЦЕ","r":0,"c":1,"d":1},{"w":"РАДУГА","r":5,"c":2,"d":1},{"w":"ДОЖДИК","r":5,"c":0,"d":1}],
+ [{"w":"КАПУСТА","r":4,"c":0,"d":0},{"w":"ПОМИДОР","r":4,"c":2,"d":1},{"w":"ОГУРЕЦ","r":9,"c":2,"d":0},{"w":"МОЛОКО","r":0,"c":0,"d":1},{"w":"ЛИМОН","r":2,"c":0,"d":0}],
+ [{"w":"ВЕЛОСИПЕД","r":5,"c":0,"d":0},{"w":"САМОЛЁТ","r":5,"c":4,"d":1},{"w":"КОРАБЛЬ","r":0,"c":2,"d":1},{"w":"МАШИНА","r":7,"c":4,"d":0},{"w":"РАКЕТА","r":6,"c":9,"d":1},{"w":"ПОЕЗД","r":1,"c":8,"d":1}]
+];
+function cwGame(){
+  var level=parseInt(localStorage.getItem("bodo_cw")||"0",10);
+  if(!(level>=0)||level>=CW_LEVELS.length) level=0;
+  renderLevel(level);
+
+  function renderLevel(lv){
+    board.innerHTML="";
+    stars=Math.min(5,Math.round(lv/CW_LEVELS.length*5)); paintStars();
+    var data=CW_LEVELS[lv];
+    var slots=data.map(function(e){
+      var cells=[];
+      for(var i=0;i<e.w.length;i++){
+        cells.push(e.d? [e.r+i,e.c] : [e.r,e.c+i]);
+      }
+      return {w:e.w, cells:cells, placed:null};
+    });
+    var rows=0, cols=0;
+    slots.forEach(function(s){ s.cells.forEach(function(rc){
+      rows=Math.max(rows,rc[0]+1); cols=Math.max(cols,rc[1]+1);
+    });});
+    var inGrid={};
+    slots.forEach(function(s){ s.cells.forEach(function(rc){ inGrid[rc[0]+","+rc[1]]=1; });});
+
+    setTask("Кроссворд "+(lv+1)+" из "+CW_LEVELS.length,
+      "Расставь слова! Нажми на слово, а потом на его место в кроссворде!");
+    if(lv===0) say("Расставь слова! Нажми на слово, а потом на его место в кроссворде!");
+
+    var grid=el("div","cw-grid",board);
+    var brd=board.getBoundingClientRect();
+    var cw=Math.floor(Math.min((brd.width-30)/cols,(brd.height*.62)/rows,54));
+    grid.style.setProperty("--cw",cw+"px");
+    grid.style.gridTemplateColumns="repeat("+cols+","+cw+"px)";
+    var cellEls={};
+    for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
+      var cell=el("div","cw-cell"+(inGrid[r+","+c]?"":" blank"),grid);
+      cell.dataset.rc=r+","+c;
+      cellEls[r+","+c]=cell;
+      cell.onclick=cellTap(r,c);
+    }
+    var bank=el("div","cw-bank",board);
+    var chips={};
+    var selChip=null, selWord=null;
+    shuffle(slots.map(function(s){return s.w;})).forEach(function(w){
+      var ch=el("button","cw-chip",bank);
+      ch.textContent=w; chips[w]=ch;
+      ch.onclick=function(){
+        if(busy||ch.classList.contains("used"))return;
+        sndTap(); say(w);
+        bank.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel");});
+        if(selWord===w){ selChip=null; selWord=null; paintCan(); return; }
+        ch.classList.add("sel"); selChip=ch; selWord=w;
+        paintCan();
+      };
+    });
+    function paintCan(){
+      Object.keys(cellEls).forEach(function(k){ cellEls[k].classList.remove("can"); });
+      if(!selWord)return;
+      slots.forEach(function(s){
+        if(!s.placed && s.w.length===selWord.length && fits(s,selWord)){
+          s.cells.forEach(function(rc){ cellEls[rc[0]+","+rc[1]].classList.add("can"); });
+        }
+      });
+    }
+    function letterAt(r,c,exceptSlot){
+      for(var i=0;i<slots.length;i++){
+        var s=slots[i];
+        if(!s.placed||s===exceptSlot)continue;
+        for(var j=0;j<s.cells.length;j++){
+          if(s.cells[j][0]===r&&s.cells[j][1]===c) return s.placed[j];
+        }
+      }
+      return null;
+    }
+    function fits(slot,word){
+      for(var i=0;i<slot.cells.length;i++){
+        var ex=letterAt(slot.cells[i][0],slot.cells[i][1],null);
+        if(ex&&ex!==word[i]) return false;
+      }
+      return true;
+    }
+    function repaint(){
+      slots.forEach(function(s){
+        if(!s.placed)return;
+        s.cells.forEach(function(rc,i){ cellEls[rc[0]+","+rc[1]].textContent=s.placed[i]; });
+      });
+      Object.keys(cellEls).forEach(function(k){
+        var parts=k.split(",");
+        if(inGrid[k] && letterAt(+parts[0],+parts[1],null)===null) cellEls[k].textContent="";
+      });
+    }
+    function cellTap(r,c){
+      return function(){
+        if(busy)return;
+        var here=slots.filter(function(s){
+          return s.cells.some(function(rc){ return rc[0]===r&&rc[1]===c; });
+        });
+        if(selWord){
+          var cand=here.filter(function(s){ return !s.placed && s.w.length===selWord.length && fits(s,selWord); });
+          if(!cand.length){
+            sndNo();
+            var cel=cellEls[r+","+c];
+            cel.classList.add("wrong"); setTimeout(function(){ cel.classList.remove("wrong"); },480);
+            return;
+          }
+          var slot=cand.filter(function(s){ return s.cells[0][0]===r&&s.cells[0][1]===c; })[0]
+                || cand.filter(function(s){ return s.cells[0][0]!==s.cells[1][0]?false:true; })[0]
+                || cand[0];
+          slot.placed=selWord;
+          chips[selWord].classList.add("used");
+          chips[selWord].classList.remove("sel");
+          selChip=null; selWord=null;
+          sndGood(); repaint(); paintCan();
+          if(slots.every(function(s){ return s.placed; })) complete();
+        } else {
+          var pl=here.filter(function(s){ return s.placed; });
+          if(pl.length){
+            var s=pl[pl.length-1];
+            chips[s.placed].classList.remove("used");
+            s.placed=null;
+            sndTap(); repaint();
+          }
+        }
+      };
+    }
+    function complete(){
+      busy=true;
+      var next=lv+1;
+      localStorage.setItem("bodo_cw", next>=CW_LEVELS.length ? "0" : String(next));
+      stars=Math.min(5,Math.round(next/CW_LEVELS.length*5)); paintStars();
+      setTimeout(function(){
+        busy=false;
+        if(next>=CW_LEVELS.length){
+          celebrate(true,function(){ stars=0; paintStars(); show(menu); });
+        } else {
+          celebrate(false,function(){ renderLevel(next); });
+        }
+      },600);
+    }
+  }
+}
+
 /* ---------- навигация ---------- */
 var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound,
   names:namesRound, letters:lettersGame, word:wordGame, sudoku:sudokuRound,
   maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound,
-  prog:progRound};
+  prog:progRound, cw:cwGame};
 /* эти игры озвучивают задание сами */
-var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1};
+var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1, cw:1};
 
 var lastStart=0;
 document.querySelectorAll(".mbtn").forEach(function(b){
