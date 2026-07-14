@@ -218,8 +218,11 @@
     font-weight:800;color:var(--ink);box-shadow:0 .25vmin 0 rgba(46,58,72,.12);cursor:pointer;
     width:var(--cw);height:var(--cw);font-size:calc(var(--cw)*.62)}
   .cw-cell.blank{visibility:hidden}
-  .cw-cell.can{background:#FFE9C7}
   .cw-cell.wrong{animation:shake .45s;background:#FBDADA}
+  .cw-cell.clue{background:rgba(255,255,255,.5);box-shadow:none;cursor:default;
+    flex-direction:column;line-height:1.05;font-size:calc(var(--cw)*.52)}
+  .cw-cell.clue .dir{font-size:calc(var(--cw)*.26);color:#5c6c7d;font-weight:800}
+  .cw-cell.clue.two{font-size:calc(var(--cw)*.36)}
   .cw-bank{display:flex;flex-wrap:wrap;gap:1.2vmin;justify-content:center;max-width:92vw}
   .cw-chip{border:none;border-radius:14px;background:#fff;color:var(--orange-d);font-family:inherit;
     font-size:min(3.4vmin,22px);font-weight:800;padding:1.2vmin 2vmin;letter-spacing:.12em;
@@ -470,7 +473,7 @@ var VOICE_MAP={
 "СОБАКА": "snd/b4b78440c7fc.mp3",
 "БАНАН": "snd/74f366df46bd.mp3",
 "КНИГА": "snd/6620fe907286.mp3",
-"АИСТ": "snd/08227672a3fa.mp3",
+"ЛИСА": "snd/fdbe6234787a.mp3",
 "СПУТНИК": "snd/e65521fd1055.mp3",
 "РАКЕТА": "snd/901417f2d838.mp3",
 "ЗВЕЗДА": "snd/68e66f3157ac.mp3",
@@ -490,7 +493,7 @@ var VOICE_MAP={
 "САМОЛЁТ": "snd/4c0fc5e935d7.mp3",
 "КОРАБЛЬ": "snd/7b7e8fc661b2.mp3",
 "ПОЕЗД": "snd/b0bb8910a878.mp3",
-"Расставь слова! Нажми на слово, а потом на его место в кроссворде!": "snd/46c19a6c0a4e.mp3",
+"Картинка подсказывает, какое слово где начинается! Нажми на слово, а потом на его клеточки.": "snd/480cd63e6715.mp3",
 "2 и 3!": "snd/001398fe7196.mp3",
 "2 и 4!": "snd/2fd2c19cbc61.mp3",
 "2 и 5!": "snd/40acb6a024e5.mp3",
@@ -1615,12 +1618,20 @@ var CW_LEVELS=[
  [{"w":"КОТ","r":1,"c":0,"d":0},{"w":"СОК","r":0,"c":1,"d":1}],
  [{"w":"ЗЕБРА","r":0,"c":0,"d":0},{"w":"АРБУЗ","r":0,"c":4,"d":1},{"w":"ЗОНТ","r":0,"c":0,"d":1}],
  [{"w":"МАШИНА","r":0,"c":0,"d":0},{"w":"ШАРИК","r":0,"c":2,"d":1},{"w":"НОСОК","r":0,"c":4,"d":1}],
- [{"w":"СОБАКА","r":2,"c":0,"d":0},{"w":"БАНАН","r":2,"c":2,"d":1},{"w":"КНИГА","r":2,"c":4,"d":1},{"w":"АИСТ","r":0,"c":0,"d":1}],
+ [{"w":"СОБАКА","r":2,"c":0,"d":0},{"w":"БАНАН","r":2,"c":2,"d":1},{"w":"КНИГА","r":2,"c":4,"d":1},{"w":"ЛИСА","r":0,"c":0,"d":1}],
  [{"w":"СПУТНИК","r":4,"c":2,"d":0},{"w":"РАКЕТА","r":0,"c":5,"d":1},{"w":"ЗВЕЗДА","r":1,"c":0,"d":0},{"w":"КОСМОС","r":4,"c":8,"d":1},{"w":"ЗЕМЛЯ","r":1,"c":0,"d":1}],
  [{"w":"ДЕРЕВО","r":5,"c":0,"d":0},{"w":"ОБЛАКО","r":5,"c":5,"d":1},{"w":"СОЛНЦЕ","r":0,"c":1,"d":1},{"w":"РАДУГА","r":5,"c":2,"d":1},{"w":"ДОЖДИК","r":5,"c":0,"d":1}],
  [{"w":"КАПУСТА","r":4,"c":0,"d":0},{"w":"ПОМИДОР","r":4,"c":2,"d":1},{"w":"ОГУРЕЦ","r":9,"c":2,"d":0},{"w":"МОЛОКО","r":0,"c":0,"d":1},{"w":"ЛИМОН","r":2,"c":0,"d":0}],
  [{"w":"ВЕЛОСИПЕД","r":5,"c":0,"d":0},{"w":"САМОЛЁТ","r":5,"c":4,"d":1},{"w":"КОРАБЛЬ","r":0,"c":2,"d":1},{"w":"МАШИНА","r":7,"c":4,"d":0},{"w":"РАКЕТА","r":6,"c":9,"d":1},{"w":"ПОЕЗД","r":1,"c":8,"d":1}]
 ];
+var CW_EMOJI={
+  "КОТ":"🐱","СОК":"🧃","ЗЕБРА":"🦓","АРБУЗ":"🍉","ЗОНТ":"☂️","МАШИНА":"🚗",
+  "ШАРИК":"🎈","НОСОК":"🧦","СОБАКА":"🐶","БАНАН":"🍌","КНИГА":"📖","ЛИСА":"🦊",
+  "СПУТНИК":"🛰️","РАКЕТА":"🚀","ЗВЕЗДА":"⭐","КОСМОС":"🌌","ЗЕМЛЯ":"🌍",
+  "ДЕРЕВО":"🌳","ОБЛАКО":"☁️","СОЛНЦЕ":"☀️","РАДУГА":"🌈","ДОЖДИК":"🌧️",
+  "КАПУСТА":"🥬","ПОМИДОР":"🍅","ОГУРЕЦ":"🥒","ЛИМОН":"🍋","МОЛОКО":"🥛",
+  "ВЕЛОСИПЕД":"🚲","САМОЛЁТ":"✈️","КОРАБЛЬ":"🚢","ПОЕЗД":"🚂"
+};
 function cwGame(){
   var level=parseInt(localStorage.getItem("bodo_cw")||"0",10);
   if(!(level>=0)||level>=CW_LEVELS.length) level=0;
@@ -1635,18 +1646,34 @@ function cwGame(){
       for(var i=0;i<e.w.length;i++){
         cells.push(e.d? [e.r+i,e.c] : [e.r,e.c+i]);
       }
-      return {w:e.w, cells:cells, placed:null};
+      /* картинка-подсказка — в клетке перед началом слова (она всегда пуста) */
+      var clue = e.d ? [e.r-1,e.c] : [e.r,e.c-1];
+      return {w:e.w, cells:cells, clue:clue, d:e.d, placed:null};
     });
-    var rows=0, cols=0;
-    slots.forEach(function(s){ s.cells.forEach(function(rc){
-      rows=Math.max(rows,rc[0]+1); cols=Math.max(cols,rc[1]+1);
-    });});
-    var inGrid={};
+    /* границы поля с учётом клеток-подсказок */
+    var minR=0,minC=0,maxR=0,maxC=0;
+    slots.forEach(function(s){
+      s.cells.concat([s.clue]).forEach(function(rc){
+        minR=Math.min(minR,rc[0]); minC=Math.min(minC,rc[1]);
+        maxR=Math.max(maxR,rc[0]); maxC=Math.max(maxC,rc[1]);
+      });
+    });
+    slots.forEach(function(s){
+      s.cells=s.cells.map(function(rc){ return [rc[0]-minR, rc[1]-minC]; });
+      s.clue=[s.clue[0]-minR, s.clue[1]-minC];
+    });
+    var rows=maxR-minR+1, cols=maxC-minC+1;
+    var inGrid={}, clues={};
     slots.forEach(function(s){ s.cells.forEach(function(rc){ inGrid[rc[0]+","+rc[1]]=1; });});
+    slots.forEach(function(s){
+      var k=s.clue[0]+","+s.clue[1];
+      if(inGrid[k]) return;             /* на всякий случай: не перекрывать буквы */
+      (clues[k]=clues[k]||[]).push({e:CW_EMOJI[s.w]||"❓", d:s.d});
+    });
 
     setTask("Кроссворд "+(lv+1)+" из "+CW_LEVELS.length,
-      "Расставь слова! Нажми на слово, а потом на его место в кроссворде!");
-    if(lv===0) say("Расставь слова! Нажми на слово, а потом на его место в кроссворде!");
+      "Картинка подсказывает, какое слово где начинается! Нажми на слово, а потом на его клеточки.");
+    if(lv===0) say("Картинка подсказывает, какое слово где начинается! Нажми на слово, а потом на его клеточки.");
 
     var grid=el("div","cw-grid",board);
     var brd=board.getBoundingClientRect();
@@ -1655,10 +1682,22 @@ function cwGame(){
     grid.style.gridTemplateColumns="repeat("+cols+","+cw+"px)";
     var cellEls={};
     for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
-      var cell=el("div","cw-cell"+(inGrid[r+","+c]?"":" blank"),grid);
-      cell.dataset.rc=r+","+c;
-      cellEls[r+","+c]=cell;
-      cell.onclick=cellTap(r,c);
+      var k=r+","+c;
+      var cell;
+      if(inGrid[k]){
+        cell=el("div","cw-cell",grid);
+        cell.dataset.rc=k;
+        cell.onclick=cellTap(r,c);
+      } else if(clues[k]){
+        cell=el("div","cw-cell clue"+(clues[k].length>1?" two":""),grid);
+        clues[k].forEach(function(cl){
+          var d=el("div","",cell);
+          d.innerHTML=cl.e+'<span class="dir">'+(cl.d?"↓":"→")+"</span>";
+        });
+      } else {
+        cell=el("div","cw-cell blank",grid);
+      }
+      cellEls[k]=cell;
     }
     var bank=el("div","cw-bank",board);
     var chips={};
@@ -1670,20 +1709,10 @@ function cwGame(){
         if(busy||ch.classList.contains("used"))return;
         sndTap(); say(w);
         bank.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel");});
-        if(selWord===w){ selChip=null; selWord=null; paintCan(); return; }
+        if(selWord===w){ selChip=null; selWord=null; return; }
         ch.classList.add("sel"); selChip=ch; selWord=w;
-        paintCan();
       };
     });
-    function paintCan(){
-      Object.keys(cellEls).forEach(function(k){ cellEls[k].classList.remove("can"); });
-      if(!selWord)return;
-      slots.forEach(function(s){
-        if(!s.placed && s.w.length===selWord.length && fits(s,selWord)){
-          s.cells.forEach(function(rc){ cellEls[rc[0]+","+rc[1]].classList.add("can"); });
-        }
-      });
-    }
     function letterAt(r,c,exceptSlot){
       for(var i=0;i<slots.length;i++){
         var s=slots[i];
@@ -1732,7 +1761,7 @@ function cwGame(){
           chips[selWord].classList.add("used");
           chips[selWord].classList.remove("sel");
           selChip=null; selWord=null;
-          sndGood(); repaint(); paintCan();
+          sndGood(); repaint();
           if(slots.every(function(s){ return s.placed; })) complete();
         } else {
           var pl=here.filter(function(s){ return s.placed; });
