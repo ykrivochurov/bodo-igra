@@ -2185,8 +2185,11 @@ function flyGame(){
   }
   function drawImg(id,x,y,size,rot,alpha){
     var im=IM(id); if(!im.complete||!im.naturalWidth) return;
+    /* вписываем в квадрат size, сохраняя родные пропорции картинки (иначе морфик искажается) */
+    var iw=im.naturalWidth, ih=im.naturalHeight, w,h;
+    if(iw>=ih){ w=size; h=size*ih/iw; } else { h=size; w=size*iw/ih; }
     ctx.save(); ctx.globalAlpha=alpha==null?1:alpha; ctx.translate(x,y); if(rot)ctx.rotate(rot);
-    ctx.drawImage(im,-size/2,-size/2,size,size); ctx.restore();
+    ctx.drawImage(im,-w/2,-h/2,w,h); ctx.restore();
   }
   function drawEmoji(e,x,y,size){
     ctx.font=size+"px serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(e,x,y);
