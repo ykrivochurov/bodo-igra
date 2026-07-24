@@ -47,7 +47,7 @@
   .screen.on{display:flex}
 
   /* ===== МЕНЮ ===== */
-  #menu{justify-content:center;gap:2.4vmin}
+  #menu{justify-content:safe center;gap:2vmin;overflow-y:auto;overflow-x:hidden}
   .mhead{display:flex;align-items:center;gap:2.4vmin}
   .mhead img{width:min(15vmin,110px);filter:drop-shadow(0 .9vmin 0 rgba(46,58,72,.12))}
   h1{font-size:min(5.4vmin,40px);letter-spacing:.5px;color:var(--orange-d);
@@ -55,12 +55,12 @@
   .bubble{background:#fff;border-radius:18px;padding:1.2vmin 2.2vmin;font-size:min(2.8vmin,19px);font-weight:800;
     margin-top:1vmin;box-shadow:0 .6vmin 0 rgba(46,58,72,.10);display:inline-block;cursor:pointer}
   .menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.8vmin;width:min(94vw,880px)}
-  .mbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1vmin;
+  .mbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9vmin;
     background:var(--card);border:none;border-radius:22px;
-    padding:1.8vmin 1vmin;font-family:inherit;font-size:min(2.7vmin,17px);font-weight:800;color:var(--ink);
+    padding:1.4vmin 1vmin;font-family:inherit;font-size:min(2.6vmin,16px);font-weight:800;color:var(--ink);
     box-shadow:0 .8vmin 0 rgba(46,58,72,.14);cursor:pointer;line-height:1.15;text-align:center}
   .mbtn:active{transform:translateY(.5vmin);box-shadow:0 .3vmin 0 rgba(46,58,72,.14)}
-  .mbtn img{width:min(8.5vmin,60px);height:min(8.5vmin,60px);object-fit:contain}
+  .mbtn img{width:min(7.5vmin,52px);height:min(7.5vmin,52px);object-fit:contain}
 
   /* ===== ИГРОВОЙ ЭКРАН ===== */
   .topbar{width:100%;max-width:900px;display:flex;align-items:center;gap:2vmin;padding:.6vmin 0 1.2vmin;flex:none}
@@ -227,6 +227,63 @@
   .cw-chip:active{transform:translateY(.3vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
   .cw-chip.used{opacity:.22;pointer-events:none}
 
+  /* математика */
+  .math-wrap{display:flex;flex-direction:column;align-items:center;gap:2.2vmin}
+  .math-q{font-size:min(11vmin,80px);font-weight:800;color:var(--orange-d);text-shadow:0 .4vmin 0 #fff}
+  .math-dots{display:flex;flex-wrap:wrap;gap:2vmin;align-items:center;justify-content:center}
+  .math-grp{display:flex;flex-wrap:wrap;gap:.5vmin;background:#fff;border-radius:16px;padding:1vmin 1.3vmin;
+    box-shadow:0 .5vmin 0 rgba(46,58,72,.12);max-width:min(42vmin,320px)}
+  .math-grp img{width:min(6.5vmin,44px);height:min(6.5vmin,44px);object-fit:contain}
+  .math-grp img.gone{opacity:.18;filter:grayscale(1)}
+  .math-op{font-size:min(8vmin,54px);font-weight:800;color:var(--ink)}
+  .numbtn{border:none;border-radius:20px;background:#fff;color:var(--orange-d);font-family:inherit;
+    font-size:min(9vmin,60px);font-weight:800;width:min(22vmin,150px);height:min(18vmin,120px);
+    box-shadow:0 .7vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .numbtn:active{transform:translateY(.4vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
+  .numbtn.correct{background:#DFF3CE;animation:pop .45s}
+  .numbtn.wrong{animation:shake .45s;background:#FBDADA}
+
+  /* найди отличия */
+  .diff-cols{display:flex;flex-wrap:wrap;gap:1.6vmin 5vmin;align-items:flex-start;justify-content:center}
+  .diff-scene{display:flex;flex-direction:column;gap:1vmin;align-items:center}
+  .diff-grid{display:grid;gap:1vmin;background:rgba(255,255,255,.35);padding:1.2vmin;border-radius:18px}
+  .diff-cell{background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    padding:8%;box-shadow:0 .4vmin 0 rgba(46,58,72,.12);border:none;cursor:pointer;width:var(--dc);height:var(--dc)}
+  .diff-cell img{width:100%;height:100%;object-fit:contain}
+  .diff-cell.ref{cursor:default}
+  .diff-cell.found{background:#DFF3CE;outline:.5vmin solid var(--leaf)}
+  .diff-cell.wrong{animation:shake .45s;background:#FBDADA}
+  .diff-lbl{font-size:min(2.8vmin,19px);font-weight:800;color:#5c6c7d}
+
+  /* читай и покажи */
+  .read-word{background:#fff;border-radius:20px;padding:1.6vmin 4vmin;font-size:min(10vmin,64px);font-weight:800;
+    letter-spacing:.06em;color:var(--orange-d);box-shadow:0 .7vmin 0 rgba(46,58,72,.14)}
+  .read-opts{display:flex;flex-wrap:wrap;gap:2.4vmin;justify-content:center}
+  .read-emoji{border:none;border-radius:22px;background:#fff;font-size:min(15vmin,104px);line-height:1;
+    width:min(24vmin,168px);height:min(24vmin,168px);box-shadow:0 .8vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .read-emoji:active{transform:translateY(.4vmin);box-shadow:0 .3vmin 0 rgba(46,58,72,.14)}
+  .read-emoji.correct{background:#DFF3CE;animation:pop .45s}
+  .read-emoji.wrong{animation:shake .45s;background:#FBDADA}
+  .read-chip{border:none;border-radius:16px;background:#fff;color:var(--orange-d);font-family:inherit;
+    font-size:min(5vmin,32px);font-weight:800;letter-spacing:.06em;padding:1.4vmin 3vmin;
+    box-shadow:0 .6vmin 0 rgba(46,58,72,.14);cursor:pointer}
+  .read-chip:active{transform:translateY(.4vmin);box-shadow:0 .2vmin 0 rgba(46,58,72,.14)}
+  .read-chip.correct{background:#DFF3CE}
+  .read-chip.wrong{animation:shake .45s;background:#FBDADA}
+
+  /* награды */
+  #awards{position:fixed;inset:0;background:rgba(255,255,255,.94);z-index:60;display:none;
+    flex-direction:column;align-items:center;padding:max(14px,env(safe-area-inset-top)) 16px 16px;overflow:auto}
+  #awards.on{display:flex}
+  #awards h2{font-size:min(6vmin,40px);color:var(--orange-d);text-shadow:0 .4vmin 0 #fff;margin:1vmin 0 1.6vmin;text-align:center}
+  .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(28vw,146px),1fr));gap:1.4vmin;width:min(94vw,880px)}
+  .aw-card{background:#fff;border-radius:18px;padding:1.4vmin;display:flex;flex-direction:column;align-items:center;gap:.5vmin;
+    box-shadow:0 .5vmin 0 rgba(46,58,72,.12);text-align:center;font-size:min(2.4vmin,15px);font-weight:800}
+  .aw-card .med{font-size:min(9vmin,52px);line-height:1}
+  .aw-card .lv{font-size:min(2vmin,13px);color:#5c6c7d}
+  .aw-close{margin-top:2.4vmin;border:none;border-radius:18px;background:var(--orange);color:#fff;font-family:inherit;
+    font-size:min(3.6vmin,24px);font-weight:800;padding:1.4vmin 4vmin;box-shadow:0 .7vmin 0 rgba(213,84,15,.5);cursor:pointer}
+
   /* ===== ПОХВАЛА ===== */
   #praise{position:fixed;inset:0;background:rgba(255,255,255,.75);backdrop-filter:blur(4px);
     display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.5vmin;z-index:50}
@@ -265,7 +322,18 @@
     <button class="mbtn" data-game="count"><img data-img="krya" alt="">Кого больше?</button>
     <button class="mbtn" data-game="prog"><img data-img="nos" alt="">Запрограммируй!</button>
     <button class="mbtn" data-game="cw"><img data-img="zub" alt="">Кроссворд</button>
+    <button class="mbtn" data-game="math"><img data-img="zhu" alt="">Математика</button>
+    <button class="mbtn" data-game="diff"><img data-img="ino" alt="">Найди отличия</button>
+    <button class="mbtn" data-game="read"><img data-img="osya" alt="">Читай и покажи</button>
   </div>
+  <button class="bubble" id="awardsBtn">🏆 Мои награды</button>
+</div>
+
+<!-- НАГРАДЫ -->
+<div id="awards">
+  <h2>🏆 Мои награды</h2>
+  <div class="aw-grid" id="awGrid"></div>
+  <button class="aw-close" id="awClose">Назад</button>
 </div>
 
 <!-- ИГРА -->
@@ -474,6 +542,23 @@ var menu=document.getElementById("menu"), game=document.getElementById("game"),
 
 var current=null, stars=0, busy=false, cleanup=null;
 
+/* ---------- прогресс: сложность копится между запусками ----------
+   baseLv — «пояс» сложности текущей игры (хранится в localStorage),
+   D() — эффективная сложность = накопленный пояс + звёзды в этом заходе.
+   Пять звёзд = медаль и +1 к поясу: в следующий раз игра начнётся труднее. */
+var PROG={}; try{ PROG=JSON.parse(localStorage.getItem("bodo_prog")||"{}"); }catch(e){ PROG={}; }
+function saveProg(){ try{ localStorage.setItem("bodo_prog",JSON.stringify(PROG)); }catch(e){} }
+var baseLv=0;
+function D(){ return baseLv+stars; }
+function medalFor(lv){
+  if(lv>=8) return {txt:"🏆 Кубок!",   say:"Ух ты! Целый кубок! Ты настоящий чемпион!", tier:4};
+  if(lv>=6) return {txt:"💎 Алмаз!",   say:"Алмазная медаль! Ты чемпион!",             tier:4};
+  if(lv>=4) return {txt:"🥇 Золото!",  say:"Золотая медаль! Ты молодец!",              tier:3};
+  if(lv>=2) return {txt:"🥈 Серебро!", say:"Серебряная медаль! Здорово!",              tier:2};
+  return       {txt:"🥉 Бронза!", say:"Бронзовая медаль! Отлично!",              tier:1};
+}
+function medalEmoji(lv){ return lv>=8?"🏆":lv>=6?"💎":lv>=4?"🥇":lv>=2?"🥈":lv>=1?"🥉":"⬜"; }
+
 function show(scr){
   if(scr===menu && cleanup){ cleanup(); cleanup=null; }
   menu.classList.remove("on"); game.classList.remove("on"); scr.classList.add("on");
@@ -490,12 +575,16 @@ function paintStars(){
 }
 
 var PRAISE=["Молодец!","Умница!","Правильно!","Здорово!","Супер!","Отлично!"];
-function celebrate(big, then){
-  var w=PRAISE[rnd(PRAISE.length)];
-  praiseWord.textContent = big ? "Ты победил! 🎉" : w;
+function celebrate(big, then, medal){
   praise.classList.add("on");
-  if(big){ sndWin(); say("Ура! Ты победил! Ты настоящий молодец!"); confetti(); }
-  else { sndGood(); say(w); }
+  if(big){
+    if(medal){ praiseWord.textContent=medal.txt; sndWin(); say(medal.say); }
+    else { praiseWord.textContent="Ты победил! 🎉"; sndWin(); say("Ура! Ты победил! Ты настоящий молодец!"); }
+    confetti();
+  } else {
+    var w=PRAISE[rnd(PRAISE.length)];
+    praiseWord.textContent=w; sndGood(); say(w);
+  }
   setTimeout(function(){ praise.classList.remove("on"); then&&then(); }, big?2600:1300);
 }
 function confetti(){
@@ -512,7 +601,13 @@ function confetti(){
 function starWon(){
   stars++; paintStars();
   if(stars>=5){
-    celebrate(true,function(){ stars=0; paintStars(); show(menu); });
+    baseLv++;
+    if(current && current!=="cw"){ PROG[current]=Math.max(PROG[current]||0, baseLv); saveProg(); }
+    celebrate(true,function(){
+      stars=0; busy=false; paintStars();
+      if(cleanup){ cleanup(); cleanup=null; }
+      if(current && GAMES[current]) GAMES[current]();   /* тот же аттракцион, но труднее */
+    }, medalFor(baseLv));
     return true;
   }
   return false;
@@ -520,9 +615,10 @@ function starWon(){
 
 /* ---------- игра 1: мемори ---------- */
 function memoryRound(){
-  var pairs = stars<2 ? 4 : (stars<4 ? 6 : 8);
-  var cw = pairs===4 ? "min(20vmin,140px)" : (pairs===6 ? "min(17vmin,118px)" : "min(14.5vmin,100px)");
-  var ch = pairs===4 ? "min(23vmin,160px)" : (pairs===6 ? "min(19.5vmin,134px)" : "min(16.5vmin,113px)");
+  var d=D();
+  var pairs = d<2?4 : d<4?6 : d<6?8 : 10;
+  var cw = pairs===4 ? "min(20vmin,140px)" : pairs===6 ? "min(17vmin,118px)" : pairs===8 ? "min(14.5vmin,100px)" : "min(12.5vmin,86px)";
+  var ch = pairs===4 ? "min(23vmin,160px)" : pairs===6 ? "min(19.5vmin,134px)" : pairs===8 ? "min(16.5vmin,113px)" : "min(14vmin,98px)";
   setTask("Найди пары!","Найди одинаковые карточки. Где спрятались пары?");
   board.innerHTML="";
   var chosen=pick(CHARS,pairs), deck=shuffle(chosen.concat(chosen));
@@ -559,17 +655,32 @@ function memoryRound(){
 
 /* ---------- игра 2: кто лишний ---------- */
 function oddRound(){
-  setTask("Кто здесь лишний?","Посмотри внимательно. Три морфика одинаковые, а один — другой. Кто лишний?");
   board.innerHTML="";
-  var two=pick(CHARS,2), same=two[0], odd=two[1];
-  var items=shuffle([same,same,same,odd]);
-  var row=el("div","row",board);
+  var d=D(), row=el("div","row",board);
+  var items, answer, sz;
+  if(d<4){
+    var n = d<2?4:6;                                   /* N−1 одинаковых + 1 лишний */
+    var two=pick(CHARS,2), same=two[0], odd=two[1];
+    items=[]; for(var i=0;i<n-1;i++) items.push(same); items.push(odd);
+    items=shuffle(items); answer=odd;
+    sz = n<=4 ? "min(24vmin,170px)" : "min(18vmin,128px)";
+    setTask("Кто здесь лишний?","Посмотри внимательно. Все морфики одинаковые, а один — другой. Кто лишний?");
+  } else {
+    var k = d<6?3:4;                                   /* найди того, кто только один */
+    var chs=pick(CHARS,k);
+    items=[chs[0]];
+    for(var j=1;j<k;j++){ items.push(chs[j]); items.push(chs[j]); }
+    items=shuffle(items); answer=chs[0];
+    sz = "min(16vmin,115px)";
+    setTask("Кто здесь только ОДИН?","Почти все морфики встречаются по два раза. Найди того, кто тут только один!");
+  }
   items.forEach(function(id){
-    var b=el("button","tile big",row);
+    var b=el("button","tile",row);
+    b.style.width=sz; b.style.height=sz;
     b.innerHTML='<img src="'+IMG[id]+'" alt="">';
     b.onclick=function(){
       if(busy)return;
-      if(id===odd){
+      if(id===answer){
         busy=true; b.classList.add("correct");
         setTimeout(function(){ busy=false; if(!starWon()) celebrate(false, oddRound); },420);
       } else { sndNo(); b.classList.add("wrong"); setTimeout(function(){b.classList.remove("wrong");},480); }
@@ -581,15 +692,20 @@ function oddRound(){
 function shadowRound(){
   setTask("Чья это тень?","Посмотри на тёмную тень. Кто из морфиков там спрятался?");
   board.innerHTML="";
-  var three=pick(CHARS,3), target=three[0];
+  var d=D();
+  var n = d<2?3:d<4?4:d<6?5:6;
+  var opts=pick(CHARS,n), target=opts[0];
+  var mirror = d>=4;                                  /* зеркальная тень — труднее */
   var top=el("div","row",board);
   var sh=el("div","tile big",top);
   sh.style.cursor="default";
-  sh.innerHTML='<img class="shadow-img" src="'+IMG[target]+'" alt="">';
+  sh.innerHTML='<img class="shadow-img" src="'+IMG[target]+'" alt=""'+(mirror?' style="transform:scaleX(-1)"':'')+'>';
   var shImg=sh.querySelector("img");
   var row=el("div","row",board);
-  shuffle(three).forEach(function(id){
-    var b=el("button","tile big",row);
+  var osz = n<=4?"min(24vmin,170px)":n===5?"min(19vmin,135px)":"min(16vmin,115px)";
+  shuffle(opts).forEach(function(id){
+    var b=el("button","tile",row);
+    b.style.width=osz; b.style.height=osz;
     b.innerHTML='<img src="'+IMG[id]+'" alt="">';
     b.onclick=function(){
       if(busy)return;
@@ -605,12 +721,15 @@ function shadowRound(){
 function seqRound(){
   setTask("Кто будет дальше?","Посмотри на ряд. Морфики чередуются. Кто должен стоять следующим?");
   board.innerHTML="";
-  var three=pick(CHARS,3), A=three[0], B=three[1], C=three[2];
-  /* с ростом звёзд усложняем узор: AB → AAB → ABC */
-  var pattern, answer;
-  if(stars<2){ pattern=[A,B,A,B]; answer=A; }
-  else if(stars<4){ pattern=[A,A,B,A,A]; answer=B; }
-  else { pattern=[A,B,C,A,B]; answer=C; }
+  var d=D();
+  var four=pick(CHARS,4), A=four[0], B=four[1], C=four[2], E=four[3];
+  /* с ростом сложности узор усложняется: AB → AAB → ABC → ABB → ABCC */
+  var pattern, answer, opts;
+  if(d<2){ pattern=[A,B,A,B]; answer=A; opts=[A,B,C]; }
+  else if(d<4){ pattern=[A,A,B,A,A]; answer=B; opts=[A,B,C]; }
+  else if(d<6){ pattern=[A,B,C,A,B]; answer=C; opts=[A,B,C]; }
+  else if(d<8){ pattern=[A,B,B,A,B,B]; answer=A; opts=[A,B,C]; }
+  else { pattern=[A,B,C,C,A,B,C]; answer=C; opts=[A,B,C,E]; }
   var seq=el("div","row seq",board);
   pattern.forEach(function(id){
     var t=el("div","tile",seq);
@@ -619,7 +738,7 @@ function seqRound(){
   var slot=el("div","tile slot",seq);
   var lbl=el("div","qrow-label",board); lbl.textContent="Выбери, кто дальше:";
   var row=el("div","row",board);
-  shuffle([A,B,C]).forEach(function(id){
+  shuffle(opts).forEach(function(id){
     var b=el("button","tile big",row);
     b.innerHTML='<img src="'+IMG[id]+'" alt="">';
     b.onclick=function(){
@@ -638,7 +757,8 @@ function seqRound(){
 function namesRound(){
   setTask("Соедини имя и морфика!","Нажми на имя, а потом на морфика, которого так зовут!");
   board.innerHTML="";
-  var three=pick(CHARS,3);
+  var cnt = D()<3?3:4;
+  var three=pick(CHARS,cnt);
   var wrap=el("div","pairs",board);
   var colN=el("div","col",wrap), colI=el("div","col",wrap);
   var selN=null, selI=null, matched=0;
@@ -669,7 +789,7 @@ function namesRound(){
       a.classList.remove("sel"); c.classList.remove("sel");
       a.classList.add("done"); c.classList.add("done");
       matched++; sndGood();
-      if(matched===3){
+      if(matched===cnt){
         busy=true;
         setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,namesRound); },450);
       }
@@ -688,7 +808,8 @@ function namesRound(){
 /* ---------- общий движок «падающие буквы» ---------- */
 var LET="АБВГДЕЖЗИКЛМНОПРСТУ".split("");
 function makeCatcher(opts){
-  /* opts: onCatch(ch), wantSpawn() -> символ, container */
+  /* opts: onCatch(ch), wantSpawn() -> символ, container, speed?, rate? */
+  var SPEED=opts.speed||1, RATE=opts.rate||1.6;
   var letters=[], raf=null, spawnT=.4, paused=false, alive=true;
   var arena=el("div","",opts.container); arena.id="arena";
   var bodo=el("img","catcher",arena); bodo.src=IMG.bodo; bodo.alt="";
@@ -713,7 +834,7 @@ function makeCatcher(opts){
     var r=arena.getBoundingClientRect();
     d.style.left=((.06+Math.random()*.82)*r.width)+"px";
     d.style.top="-80px";
-    letters.push({el:d,y:-80,v:r.height/6*(0.85+Math.random()*.5),ch:ch});
+    letters.push({el:d,y:-80,v:r.height/6*(0.85+Math.random()*.5)*SPEED,ch:ch});
   }
   var last=performance.now();
   function frame(now){
@@ -721,7 +842,7 @@ function makeCatcher(opts){
     var dt=Math.min((now-last)/1000,.05); last=now;
     if(!paused){
       spawnT-=dt;
-      if(spawnT<=0){ spawn(); spawnT=1.6; }
+      if(spawnT<=0){ spawn(); spawnT=RATE; }
       var r=arena.getBoundingClientRect();
       var bw=bodo.offsetWidth, btop=r.height-bodo.offsetHeight*.8, bcx=bx*r.width;
       for(var i=letters.length-1;i>=0;i--){
@@ -752,27 +873,30 @@ function makeCatcher(opts){
 /* ---------- игра 6: Бодо ловит буквы ---------- */
 function lettersGame(){
   board.innerHTML="";
-  var target=null, caught=0, ctl;
+  var target=null, caught=0, need=3, ctl;
+  var lv=baseLv;
+  var speed=Math.min(1+lv*0.14,2.2), rate=Math.max(0.85,1.6-lv*0.12);
+  var targetChance=Math.max(.32,.55-lv*.04);
   function newTarget(){
     var old=target;
     do{ target=LET[rnd(LET.length)]; }while(target===old);
-    caught=0;
-    setTask("Лови букву «"+target+"»! ("+caught+" из 3)","Лови букву "+target+"! Двигай Бо́до пальцем!");
+    caught=0; need=D()<3?3:D()<6?4:5;
+    setTask("Лови букву «"+target+"»! ("+caught+" из "+need+")","Лови букву "+target+"! Двигай Бо́до пальцем!");
     say("Лови букву "+target+"!");
   }
   ctl=makeCatcher({
-    container:board,
-    wantSpawn:function(){ return Math.random()<.5?target:LET[rnd(LET.length)]; },
+    container:board, speed:speed, rate:rate,
+    wantSpawn:function(){ return Math.random()<targetChance?target:LET[rnd(LET.length)]; },
     onCatch:function(ch){
       if(ch===target){
         caught++; sndGood();
-        if(caught>=3){
+        if(caught>=need){
           ctl.pause(true);
           if(!starWon()){
             celebrate(false,function(){ ctl.clear(); newTarget(); ctl.pause(false); });
           }
         } else {
-          setTask("Лови букву «"+target+"»! ("+caught+" из 3)","Лови букву "+target+"!");
+          setTask("Лови букву «"+target+"»! ("+caught+" из "+need+")","Лови букву "+target+"!");
         }
       } else { sndNo(); }
     }
@@ -783,14 +907,18 @@ function lettersGame(){
 /* ---------- игра 7: собери слово ---------- */
 var WORDS3=["ДОМ","СОК","КОТ","НОС","ЖУК","ЛУК","МАК","КИТ","СЫР","СОН","ЛЕС","РАК","ДЫМ","БОК"];
 var WORDS4=["РЫБА","ЛУНА","РОЗА","ГОРА","КАША","ЗИМА","НЕБО","ЛАПА"];
+var WORDS5=["ЗЕБРА","ЛИМОН","БАНАН","ВАГОН","ЖИРАФ","КОШКА","МЫШКА","НАСОС"];
 function wordGame(){
   board.innerHTML="";
   var word="", idx=0, slotEls=[], ctl;
+  var lv=baseLv;
+  var speed=Math.min(1+lv*0.12,2.0), rate=Math.max(0.9,1.6-lv*0.1);
   var slotsRow=el("div","slots",board);
   function newWord(){
-    var list = stars>=3 ? WORDS4 : WORDS3;
+    var d=D();
+    var list = d<3?WORDS3 : d<6?WORDS4 : WORDS5;
     var old=word;
-    do{ word=list[rnd(list.length)]; }while(word===old);
+    do{ word=list[rnd(list.length)]; }while(word===old&&list.length>1);
     idx=0; slotsRow.innerHTML=""; slotEls=[];
     word.split("").forEach(function(ch){
       var s=el("div","wslot",slotsRow); s.textContent=ch; slotEls.push(s);
@@ -800,8 +928,8 @@ function wordGame(){
     say("Собери слово! Лови букву "+word[0]+"!");
   }
   ctl=makeCatcher({
-    container:board,
-    wantSpawn:function(){ return Math.random()<.45?word[idx]:LET[rnd(LET.length)]; },
+    container:board, speed:speed, rate:rate,
+    wantSpawn:function(){ return Math.random()<Math.max(.3,.45-lv*.03)?word[idx]:LET[rnd(LET.length)]; },
     onCatch:function(ch){
       if(ch===word[idx]){
         slotEls[idx].classList.remove("next");
@@ -834,7 +962,7 @@ function sudokuRound(){
   var pr=shuffle([0,1,2,3]), pc=shuffle([0,1,2,3]), ps=shuffle([0,1,2,3]);
   var sol=[], grid=[];
   for(var r=0;r<4;r++){ sol[r]=[]; for(var c=0;c<4;c++){ sol[r][c]=ps[ base[pr[r]][pc[c]] ]; } }
-  var empties = Math.min(6+stars, 10);
+  var empties = Math.min(6+D(), 12);
   var order=shuffle([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]).slice(0,empties);
   for(var i2=0;i2<16;i2++){ grid[i2] = order.indexOf(i2)>=0 ? -1 : sol[Math.floor(i2/4)][i2%4]; }
 
@@ -892,8 +1020,8 @@ function sudokuRound(){
 function mazeRound(){
   setTask("Помоги Бодо!","Веди Бо́до пальцем по дорожкам лабиринта к морфику!");
   board.innerHTML="";
-  var sizes=[[7,5],[9,5],[9,7],[11,7],[13,9]];
-  var sz=sizes[Math.min(stars,4)], W=sz[0], H=sz[1];
+  var sizes=[[7,5],[9,5],[9,7],[11,7],[13,9],[15,9],[15,11],[17,11]];
+  var sz=sizes[Math.min(D(),sizes.length-1)], W=sz[0], H=sz[1];
   var wrap=el("div","",board); wrap.id="mazeWrap";
   var cv=el("canvas","",wrap); cv.id="mazeCanvas";
   var walls=[];
@@ -1000,11 +1128,13 @@ function changedRound(){
   board.innerHTML="";
   var alive=true;
   cleanup=function(){ alive=false; };
-  var n=Math.min(4+Math.floor(stars/2),6);
+  var d=D();
+  var n=Math.min(4+Math.floor(d/2),8);
+  var memMs=Math.max(1800,3600-d*250);
   var scene=pick(CHARS,n);
   var missing=scene[rnd(n)];
   var others=CHARS.filter(function(c){ return scene.indexOf(c)<0; });
-  var opts=shuffle([missing].concat(pick(others,2)));
+  var opts=shuffle([missing].concat(pick(others, d<4?2:3)));
 
   var sceneRow=el("div","row",board);
   var tiles={};
@@ -1022,7 +1152,7 @@ function changedRound(){
   setTimeout(function(){
     if(!alive)return;
     curtain.classList.add("on");
-  },3600);
+  },memMs);
   setTimeout(function(){
     if(!alive)return;
     tiles[missing].classList.add("gap-tile");
@@ -1031,9 +1161,10 @@ function changedRound(){
     setTask("Кого не хватает?","Кто-то спрятался! Кого не хватает на полянке?");
     say("Кого не хватает?");
     var row=el("div","row",board);
+    var osz = opts.length<=3 ? "min(19vmin,135px)" : "min(16vmin,115px)";
     opts.forEach(function(id){
       var b=el("button","tile big",row);
-      b.style.width="min(19vmin,135px)"; b.style.height="min(19vmin,135px)";
+      b.style.width=osz; b.style.height=osz;
       b.innerHTML='<img src="'+IMG[id]+'" alt="">';
       b.onclick=function(){
         if(busy)return;
@@ -1046,14 +1177,16 @@ function changedRound(){
       };
     });
     busy=false;
-  },4700);
+  },memMs+1100);
 }
 
 /* ---------- игра 11: пазл ---------- */
 function puzzleRound(){
   setTask("Собери картинку!","Перетаскивай кусочки на картинку, чтобы собрать её целиком!");
   board.innerHTML="";
-  var conf = stars<1?[2,2]:(stars<3?[3,2]:[3,3]);
+  var d=D();
+  var conf = d<1?[2,2]:d<3?[3,2]:d<5?[3,3]:d<7?[3,4]:[4,4];
+  var showGhost = d<5;
   var cols=conf[0], rows=conf[1];
   var ch=CHARS[rnd(CHARS.length)];
   var area=el("div","pz-area",board);
@@ -1075,6 +1208,7 @@ function puzzleRound(){
     ghost.style.left=bx0+"px"; ghost.style.top=by0+"px";
     ghost.style.width=bw+"px"; ghost.style.height=bh+"px";
     ghost.style.backgroundImage="url("+IMG[ch]+")";
+    if(!showGhost) ghost.style.display="none";
     var slots=[];
     for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
       var s=el("div","pz-slot",area);
@@ -1153,6 +1287,8 @@ function simonGame(){
   cleanup=function(){ alive=false; timers.forEach(clearTimeout); };
   var four=pick(CHARS,4);
   var freqs=[262,330,392,494];
+  var gap=Math.max(360,650-baseLv*45);          /* с ростом пояса показ быстрее */
+  var startLen=2+Math.min(baseLv,4);            /* и стартовая цепочка длиннее */
   var seq=[], idx=0, canTap=false;
   var row=el("div","row simon-row",board);
   var tiles=[];
@@ -1190,19 +1326,19 @@ function simonGame(){
     canTap=false; idx=0;
     setTask("Смотри и запоминай!","Смотри внимательно, кто прыгает, и запоминай порядок!");
     seq.forEach(function(s,k){
-      later(function(){ flash(s); },600+k*650);
+      later(function(){ flash(s); },600+k*gap);
     });
     later(function(){
       canTap=true;
       setTask("Теперь ты! Повтори!","Теперь ты! Нажимай на морфиков в том же порядке!");
       say("Теперь ты!");
-    },600+seq.length*650);
+    },600+seq.length*gap);
   }
   function extend(){
     seq.push(rnd(4));
     playSeq();
   }
-  seq=[rnd(4),rnd(4)];
+  seq=[]; for(var s0=0;s0<startLen;s0++) seq.push(rnd(4));
   playSeq();
 }
 
@@ -1210,9 +1346,11 @@ function simonGame(){
 function countRound(){
   board.innerHTML="";
   var alive=true; cleanup=function(){ alive=false; };
-  var diff = stars<2?3:(stars<4?2:1);
-  var a=2+rnd(5), b=a+diff;
-  if(b>8){ a-=b-8; b=8; }
+  var d=D();
+  var diff = d<2?3:d<4?2:1;
+  var maxN = d<4?8:d<6?10:12;
+  var a=2+rnd(maxN-3), b=a+diff;
+  if(b>maxN){ a-=b-maxN; b=maxN; }
   if(Math.random()<.5){ var t=a;a=b;b=t; }
   var more=Math.random()<.6;
   var q = more ? "Где морфиков БОЛЬШЕ?" : "Где морфиков МЕНЬШЕ?";
@@ -1221,7 +1359,8 @@ function countRound(){
   var chA=CHARS[rnd(CHARS.length)], chB;
   do{ chB=CHARS[rnd(CHARS.length)]; }while(chB===chA);
   var wrap=el("div","count-wrap",board);
-  var SPOTS=[[12,12],[44,8],[70,16],[22,42],[52,38],[74,52],[12,66],[44,64]];
+  var SPOTS=[[12,12],[44,8],[70,16],[22,42],[52,38],[74,52],[12,66],[44,64],
+             [72,70],[30,24],[58,56],[36,48],[64,32],[20,58]];
   function meadow(cnt,ch){
     var m=el("button","meadow",wrap);
     shuffle(SPOTS).slice(0,cnt).forEach(function(sp){
@@ -1262,10 +1401,11 @@ function progRound(){
   cleanup=function(){ alive=false; timers.forEach(clearTimeout); };
 
   /* сложность: размер поля, длина кратчайшего пути, препятствия */
-  var GW = stars<2?4:(stars<4?5:6);
-  var GH = stars<2?3:4;
-  var steps = stars<2?4:(stars<4?6:8);
-  var nObst = stars<2?2:(stars<4?4:5);
+  var d=D();
+  var GW = d<2?4:d<4?5:d<6?6:7;
+  var GH = d<2?3:d<5?4:5;
+  var steps = d<2?4:d<4?6:d<6?8:10;
+  var nObst = d<2?2:d<4?4:d<6?5:7;
 
   /* ставим препятствия, потом BFS: цель — клетка, до которой кратчайший путь = steps */
   var sx=0, sy=GH-1, obst=null, tgt=null, guard=0;
@@ -1577,13 +1717,132 @@ function cwGame(){
   }
 }
 
+/* ---------- игра 16: математика ---------- */
+function mathRound(){
+  board.innerHTML="";
+  var d=D();
+  var maxSum = d<3?5:10;
+  var sub = d>=6;                                     /* высокий уровень — вычитание */
+  var a,b,op,ans;
+  if(sub){ a=2+rnd(maxSum-1); b=1+rnd(a-1); op="−"; ans=a-b; }
+  else { a=1+rnd(maxSum-1); b=1+rnd(maxSum-a); op="+"; ans=a+b; }
+  var chA=CHARS[rnd(CHARS.length)], chB;
+  do{ chB=CHARS[rnd(CHARS.length)]; }while(chB===chA);
+  var wrap=el("div","math-wrap",board);
+  var q=el("div","math-q",wrap); q.textContent=a+" "+op+" "+b+" = ?";
+  var vis=el("div","math-dots",wrap);
+  if(sub){
+    var g=el("div","math-grp",vis);
+    for(var i=0;i<a;i++){ var im=el("img", i>=a-b?"gone":"", g); im.src=IMG[chA]; }
+  } else {
+    var g1=el("div","math-grp",vis);
+    for(var i1=0;i1<a;i1++){ var im1=el("img","",g1); im1.src=IMG[chA]; }
+    var op1=el("div","math-op",vis); op1.textContent="+";
+    var g2=el("div","math-grp",vis);
+    for(var j=0;j<b;j++){ var im2=el("img","",g2); im2.src=IMG[chB]; }
+  }
+  var opts=[ans], guard=0;
+  while(opts.length<3 && guard<60){ guard++; var w=ans+rnd(7)-3; if(w>=0 && opts.indexOf(w)<0) opts.push(w); }
+  while(opts.length<3){ opts.push(opts.length+ans+1); }
+  opts=shuffle(opts);
+  var row=el("div","row",board);
+  opts.forEach(function(v){
+    var b2=el("button","numbtn",row); b2.textContent=v;
+    b2.onclick=function(){
+      if(busy)return;
+      if(v===ans){ busy=true; b2.classList.add("correct"); sndGood();
+        setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,mathRound); },450);
+      } else { sndNo(); b2.classList.add("wrong"); setTimeout(function(){b2.classList.remove("wrong");},480); }
+    };
+  });
+  var word = op==="+"?" плюс ":" минус ";
+  setTask("Сколько будет?","Посчитай! Сколько будет "+a+word+b+"?");
+  say("Посчитай! Сколько будет "+a+word+b+"?");
+}
+
+/* ---------- игра 17: найди отличия ---------- */
+function diffRound(){
+  board.innerHTML="";
+  var d=D();
+  var conf = d<3?[2,2]:d<6?[3,2]:[3,3];
+  var cols=conf[0], rows=conf[1], n=cols*rows;
+  var ndiff = Math.min(d<2?1:d<5?2:3, n-1);
+  var baseArr=[]; for(var i=0;i<n;i++) baseArr.push(CHARS[rnd(CHARS.length)]);
+  var scene2=baseArr.slice();
+  var diffPos=shuffle(Array.apply(null,{length:n}).map(function(_,k){return k;})).slice(0,ndiff);
+  var diffSet={};
+  diffPos.forEach(function(p){
+    var nc; do{ nc=CHARS[rnd(CHARS.length)]; }while(nc===baseArr[p]);
+    scene2[p]=nc; diffSet[p]=1;
+  });
+  var found=0;
+  var dc = cols===2?"min(18vmin,124px)":"min(14vmin,96px)";
+  var cont=el("div","diff-cols",board);
+  function grid(arr, clickable, label){
+    var scene=el("div","diff-scene",cont);
+    var lbl=el("div","diff-lbl",scene); lbl.textContent=label;
+    var g=el("div","diff-grid",scene);
+    g.style.setProperty("--dc",dc);
+    g.style.gridTemplateColumns="repeat("+cols+",var(--dc))";
+    arr.forEach(function(id,i){
+      var c=el("button","diff-cell"+(clickable?"":" ref"),g);
+      c.innerHTML='<img src="'+IMG[id]+'" alt="">';
+      if(clickable){
+        c.onclick=function(){
+          if(busy)return;
+          if(diffSet[i]){
+            if(c.classList.contains("found"))return;
+            c.classList.add("found"); sndGood(); found++;
+            if(found>=ndiff){ busy=true; setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,diffRound); },500); }
+          } else { sndNo(); c.classList.add("wrong"); setTimeout(function(){ c.classList.remove("wrong"); },480); }
+        };
+      }
+    });
+  }
+  grid(baseArr,false,"Так было:");
+  grid(scene2,true,"А тут что-то не так! Найди "+ndiff+":");
+  setTask("Найди отличия!","Сравни две полянки. Найди морфиков, которые изменились, и нажми на них!");
+}
+
+/* ---------- игра 18: читай и покажи ---------- */
+function readRound(){
+  board.innerHTML="";
+  var d=D();
+  var keys=Object.keys(CW_EMOJI);
+  var nopt = d<4?3:4;
+  var reverse = d>=5;                                 /* картинка → слово (труднее) */
+  var word=keys[rnd(keys.length)];
+  var distract=pick(keys.filter(function(k){ return k!==word && CW_EMOJI[k]!==CW_EMOJI[word]; }), nopt-1);
+  var opts=shuffle([word].concat(distract));
+  function win(b){ busy=true; b.classList.add("correct"); sndGood();
+    setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,readRound); },450); }
+  function bad(b){ sndNo(); b.classList.add("wrong"); setTimeout(function(){ b.classList.remove("wrong"); },480); }
+  if(!reverse){
+    var w=el("div","read-word",board); w.textContent=word;
+    var row=el("div","read-opts",board);
+    opts.forEach(function(k){
+      var b=el("button","read-emoji",row); b.textContent=CW_EMOJI[k];
+      b.onclick=function(){ if(busy)return; if(k===word) win(b); else bad(b); };
+    });
+    setTask("Прочитай и покажи!","Прочитай слово и нажми на нужную картинку!");
+  } else {
+    var e=el("div","read-emoji",board); e.style.cursor="default"; e.textContent=CW_EMOJI[word];
+    var row2=el("div","read-opts",board);
+    opts.forEach(function(k){
+      var b=el("button","read-chip",row2); b.textContent=k;
+      b.onclick=function(){ if(busy)return; if(k===word) win(b); else bad(b); };
+    });
+    setTask("Какое это слово?","Посмотри на картинку и выбери нужное слово!");
+  }
+}
+
 /* ---------- навигация ---------- */
 var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound,
   names:namesRound, letters:lettersGame, word:wordGame, sudoku:sudokuRound,
   maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound,
-  prog:progRound, cw:cwGame};
+  prog:progRound, cw:cwGame, math:mathRound, diff:diffRound, read:readRound};
 /* эти игры озвучивают задание сами */
-var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1, cw:1};
+var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1, cw:1, math:1};
 
 var lastStart=0;
 document.querySelectorAll(".mbtn").forEach(function(b){
@@ -1594,6 +1853,7 @@ document.querySelectorAll(".mbtn").forEach(function(b){
     ac(); sndTap();
     if(cleanup){ cleanup(); cleanup=null; }
     current=b.dataset.game; stars=0; busy=false; paintStars();
+    baseLv=(current==="cw")?0:(PROG[current]||0);
     show(game); GAMES[current]();
     if(!SELF_SPOKEN[current]) taskEl.onclick();
   };
@@ -1601,6 +1861,31 @@ document.querySelectorAll(".mbtn").forEach(function(b){
 document.getElementById("homeBtn").onclick=function(){ sndTap(); show(menu); };
 
 document.getElementById("menuBubble").onclick=function(){ ac(); say("Привет! Я Бо́до Боро́до! Поиграем?"); };
+
+/* ---------- полка наград ---------- */
+var GAME_META=[
+  {k:"memory",t:"Найди пару"},{k:"odd",t:"Кто лишний?"},{k:"shadow",t:"Чья тень?"},
+  {k:"seq",t:"Продолжи ряд"},{k:"names",t:"Как зовут?"},{k:"letters",t:"Лови буквы!"},
+  {k:"word",t:"Собери слово"},{k:"sudoku",t:"Судоку"},{k:"maze",t:"Лабиринт"},
+  {k:"changed",t:"Что изменилось?"},{k:"puzzle",t:"Пазл"},{k:"simon",t:"Повтори!"},
+  {k:"count",t:"Кого больше?"},{k:"prog",t:"Запрограммируй!"},{k:"cw",t:"Кроссворд"},
+  {k:"math",t:"Математика"},{k:"diff",t:"Найди отличия"},{k:"read",t:"Читай и покажи"}
+];
+var awardsScr=document.getElementById("awards"), awGrid=document.getElementById("awGrid");
+function openAwards(){
+  awGrid.innerHTML="";
+  GAME_META.forEach(function(g){
+    var lv = g.k==="cw" ? (parseInt(localStorage.getItem("bodo_cw")||"0",10)||0) : (PROG[g.k]||0);
+    var card=el("div","aw-card",awGrid);
+    var m=el("div","med",card); m.textContent=medalEmoji(lv);
+    var nm=el("div","",card); nm.textContent=g.t;
+    var lvl=el("div","lv",card); lvl.textContent = lv>0 ? ("уровень "+lv) : "ещё нет";
+    card.onclick=function(){ say(g.t); };
+  });
+  awardsScr.classList.add("on");
+}
+document.getElementById("awardsBtn").onclick=function(){ ac(); sndTap(); openAwards(); };
+document.getElementById("awClose").onclick=function(){ sndTap(); awardsScr.classList.remove("on"); };
 
 /* двойной тап-зум off */
 document.addEventListener("dblclick",function(e){ e.preventDefault(); },{passive:false});
