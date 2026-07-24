@@ -258,6 +258,12 @@
   .diff-cell.wrong{animation:shake .45s;background:#FBDADA}
   .diff-lbl{font-size:min(2.8vmin,19px);font-weight:800;color:#5c6c7d}
 
+  /* обёртка с гарантированным вертикальным центром (iPadOS: flex:1 у #board
+     может дать «неопределённую» высоту, из-за чего justify-content съезжает вниз;
+     inset:0 даёт определённую высоту — центрирование надёжно) */
+  .center-wrap{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:2vmin}
+
   /* читай и покажи */
   .read-word{background:#fff;border-radius:20px;padding:1.6vmin 4vmin;font-size:min(10vmin,64px);font-weight:800;
     letter-spacing:.06em;color:var(--orange-d);box-shadow:0 .7vmin 0 rgba(46,58,72,.14)}
@@ -1942,7 +1948,8 @@ function mathRound(){
   else { a=1+rnd(maxSum-1); b=1+rnd(maxSum-a); op="+"; ans=a+b; }
   var chA=CHARS[rnd(CHARS.length)], chB;
   do{ chB=CHARS[rnd(CHARS.length)]; }while(chB===chA);
-  var wrap=el("div","math-wrap",board);
+  var cw=el("div","center-wrap",board); cw.style.gap="4vmin";
+  var wrap=el("div","math-wrap",cw);
   var q=el("div","math-q",wrap); q.textContent=a+" "+op+" "+b+" = ?";
   var vis=el("div","math-dots",wrap);
   if(sub){
@@ -1959,7 +1966,7 @@ function mathRound(){
   while(opts.length<3 && guard<60){ guard++; var w=ans+rnd(7)-3; if(w>=0 && opts.indexOf(w)<0) opts.push(w); }
   while(opts.length<3){ opts.push(opts.length+ans+1); }
   opts=shuffle(opts);
-  var row=el("div","row",board);
+  var row=el("div","row",cw);
   opts.forEach(function(v){
     var b2=el("button","numbtn",row); b2.textContent=v;
     b2.onclick=function(){
@@ -1991,7 +1998,8 @@ function diffRound(){
   });
   var found=0;
   var dc = cols===2?"min(18vmin,124px)":"min(14vmin,96px)";
-  var cont=el("div","diff-cols",board);
+  var cwrap=el("div","center-wrap",board);
+  var cont=el("div","diff-cols",cwrap);
   function grid(arr, clickable, label){
     var scene=el("div","diff-scene",cont);
     var lbl=el("div","diff-lbl",scene); lbl.textContent=label;
@@ -2031,17 +2039,19 @@ function readRound(){
   function win(b){ busy=true; b.classList.add("correct"); sndGood();
     setTimeout(function(){ busy=false; if(!starWon()) celebrate(false,readRound); },450); }
   function bad(b){ sndNo(); b.classList.add("wrong"); setTimeout(function(){ b.classList.remove("wrong"); },480); }
+  var wrap=el("div","center-wrap",board);
+  wrap.style.gap="4vmin";
   if(!reverse){
-    var w=el("div","read-word",board); w.textContent=word;
-    var row=el("div","read-opts",board);
+    var w=el("div","read-word",wrap); w.textContent=word;
+    var row=el("div","read-opts",wrap);
     opts.forEach(function(k){
       var b=el("button","read-emoji",row); b.textContent=CW_EMOJI[k];
       b.onclick=function(){ if(busy)return; if(k===word) win(b); else bad(b); };
     });
     setTask("Прочитай и покажи!","Прочитай слово и нажми на нужную картинку!");
   } else {
-    var e=el("div","read-emoji",board); e.style.cursor="default"; e.textContent=CW_EMOJI[word];
-    var row2=el("div","read-opts",board);
+    var e=el("div","read-emoji",wrap); e.style.cursor="default"; e.textContent=CW_EMOJI[word];
+    var row2=el("div","read-opts",wrap);
     opts.forEach(function(k){
       var b=el("button","read-chip",row2); b.textContent=k;
       b.onclick=function(){ if(busy)return; if(k===word) win(b); else bad(b); };
