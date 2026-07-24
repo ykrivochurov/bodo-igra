@@ -258,6 +258,11 @@
   .diff-cell.wrong{animation:shake .45s;background:#FBDADA}
   .diff-lbl{font-size:min(2.8vmin,19px);font-weight:800;color:#5c6c7d}
 
+  /* Бодо летит! — аркадный полёт на canvas */
+  .fly-wrap{position:absolute;inset:0;border-radius:22px;overflow:hidden;touch-action:none;
+    background:#8FD3F0;box-shadow:inset 0 0 0 .4vmin rgba(255,255,255,.4)}
+  .fly-canvas{display:block;width:100%;height:100%}
+
   /* обёртка с гарантированным вертикальным центром (iPadOS: flex:1 у #board
      может дать «неопределённую» высоту, из-за чего justify-content съезжает вниз;
      inset:0 даёт определённую высоту — центрирование надёжно) */
@@ -318,6 +323,7 @@
     </div>
   </div>
   <div class="menu-grid">
+    <button class="mbtn" data-game="fly"><img data-img="bodo" alt="">🚀 Бодо летит!</button>
     <button class="mbtn" data-game="memory"><img data-img="am" alt="">Найди пару</button>
     <button class="mbtn" data-game="odd"><img data-img="kvak" alt="">Кто лишний?</button>
     <button class="mbtn" data-game="shadow"><img data-img="ino" alt="">Чья тень?</button>
@@ -2060,13 +2066,222 @@ function readRound(){
   }
 }
 
+/* ---------- игра 19: Бодо летит! (аркадный полёт) ---------- */
+function flyGame(){
+  board.innerHTML="";
+  var d=D();
+  var wrap=el("div","fly-wrap",board);
+  var cv=el("canvas","fly-canvas",wrap);
+  var ctx=cv.getContext("2d");
+  var W=1,H=1,DPR=1;
+  function resize(){
+    var r=wrap.getBoundingClientRect();
+    if(r.width<2||r.height<2) return;
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=r.width; H=r.height;
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    cv.style.width=W+"px"; cv.style.height=H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+
+  /* кэш картинок */
+  var imgs={};
+  function IM(id){ if(!imgs[id]){ var im=new Image(); im.src=IMG[id]; imgs[id]=im; } return imgs[id]; }
+  IM("bodo"); CHARS.forEach(IM);
+
+  var alive=true, raf=null, paused=false, last=0;
+  var bx,by,tby,vy=0, scroll=0, timeSec=0, spd=0, spawnC=0, spawnO=0, shake=0, flash=0, inv=0;
+  var cols=[], obs=[], parts=[], hist=[], friends=[], CLOUDS=[];
+  var combo=0, total=0, milestone=0;
+  var GOAL=10;
+  var PAL=["#7DC24B","#F2691F","#F2699C","#5FA6F0","#FFC94B","#9B7BE0"];
+
+  function spd0(){ return H*(0.42+d*0.03); }
+  function d2(ax,ay,bx2,by2){ var dx=ax-bx2,dy=ay-by2; return dx*dx+dy*dy; }
+  function pcol(){ return PAL[rnd(PAL.length)]; }
+  function invuln(){ return inv>0; }
+
+  function initState(){
+    bx=W*0.27; by=tby=H*0.5; vy=0;
+    scroll=0; timeSec=0; spawnC=0.6; spawnO=1.7; shake=0; flash=0; inv=0;
+    cols=[]; obs=[]; parts=[]; hist=[]; friends=[]; combo=0; total=0; milestone=0;
+    CLOUDS=[];
+    for(var i=0;i<6;i++) CLOUDS.push({y:H*(0.08+Math.random()*0.55), s:H*(0.05+Math.random()*0.055),
+      sp:0.2+Math.random()*0.35, x0:Math.random()});
+  }
+
+  /* ввод: ведём Бодо по вертикали за пальцем */
+  function moveTo(clientY){
+    var r=wrap.getBoundingClientRect();
+    tby=Math.max(H*0.08, Math.min(H*0.92, clientY-r.top));
+  }
+  wrap.addEventListener("pointerdown",function(e){ moveTo(e.clientY); });
+  wrap.addEventListener("pointermove",function(e){ if(e.pressure>0||e.buttons) moveTo(e.clientY); });
+  wrap.addEventListener("touchstart",function(e){ e.preventDefault(); moveTo(e.touches[0].clientY); },{passive:false});
+  wrap.addEventListener("touchmove",function(e){ e.preventDefault(); moveTo(e.touches[0].clientY); },{passive:false});
+  var onResize=function(){ resize(); };
+  window.addEventListener("resize",onResize);
+  cleanup=function(){ alive=false; if(raf)cancelAnimationFrame(raf); window.removeEventListener("resize",onResize); };
+
+  function burst(x,y,color,n){
+    for(var i=0;i<n;i++) parts.push({x:x,y:y,vx:(Math.random()-.5)*H*0.7,
+      vy:(Math.random()-.5)*H*0.7-H*0.12, life:0.5+Math.random()*0.5, t:0,
+      c:color, r:H*0.008+Math.random()*H*0.012, star:Math.random()<.35});
+  }
+  function collectSnd(){ if(IS_IOS){ playSnd("n"+(combo%4)); } else { tone(430+Math.min(combo,12)*45,0,.12,.18,"triangle"); } }
+  function hit(){
+    sndNo(); shake=1; inv=1.1; combo=0; burst(bx,by,"#F2699C",16);
+    if(friends.length) friends.pop();
+  }
+  function onMilestone(){
+    flash=Math.max(flash,0.7); shake=Math.max(shake,0.6); burst(bx,by,"#FFC94B",30);
+    if(starWon()){ paused=true; }      /* 5-я звезда: заморозка, starWon сам празднует и рестартит */
+    else sndGood();
+  }
+
+  function update(dt){
+    timeSec+=dt;
+    spd=spd0()*(1+Math.min(timeSec*0.02,1.3)+combo*0.012);
+    scroll+=spd*dt;
+    vy=(tby-by)*0.18; by+=vy; by=Math.max(H*0.06,Math.min(H*0.94,by));
+    hist.unshift({x:bx,y:by}); if(hist.length>150) hist.pop();
+    spawnC-=dt; if(spawnC<=0){ cols.push({x:W+H*0.12, y:H*(0.14+Math.random()*0.72),
+      id:CHARS[rnd(CHARS.length)], r:H*0.055, bob:Math.random()*6.28, star:Math.random()<0.15}); spawnC=0.55+Math.random()*0.5; }
+    spawnO-=dt; if(spawnO<=0){ obs.push({x:W+H*0.12, y:H*(0.14+Math.random()*0.72), r:H*0.06, bob:Math.random()*6.28});
+      spawnO=Math.max(0.7,1.9-d*0.12)*(0.8+Math.random()*0.6); }
+    for(var i=cols.length-1;i>=0;i--){
+      var c=cols[i]; c.x-=spd*dt; c.bob+=dt*4;
+      var cy=c.y+Math.sin(c.bob)*H*0.02;
+      if(d2(c.x,cy,bx,by) < (c.r+H*0.05)*(c.r+H*0.05)){
+        combo++; total++; collectSnd();
+        burst(c.x,cy, c.star?"#FFC94B":pcol(), c.star?20:12);
+        if(c.star) combo+=2;
+        friends.push(c.id); if(friends.length>7) friends.shift();
+        flash=Math.min(flash+0.12,0.45);
+        cols.splice(i,1); milestone++; if(milestone>=GOAL){ milestone=0; onMilestone(); }
+        continue;
+      }
+      if(c.x<-H*0.15) cols.splice(i,1);
+    }
+    for(var j=obs.length-1;j>=0;j--){
+      var o=obs[j]; o.x-=spd*dt; o.bob+=dt*3;
+      if(!invuln() && d2(o.x,o.y,bx,by) < (o.r*0.72+H*0.04)*(o.r*0.72+H*0.04)) hit();
+      if(o.x<-H*0.15) obs.splice(j,1);
+    }
+    for(var p=parts.length-1;p>=0;p--){
+      var P=parts[p]; P.t+=dt; if(P.t>=P.life){ parts.splice(p,1); continue; }
+      P.x+=P.vx*dt; P.y+=P.vy*dt; P.vy+=H*0.7*dt;
+    }
+    if(shake>0) shake=Math.max(0,shake-dt*3);
+    if(flash>0) flash=Math.max(0,flash-dt*1.3);
+    if(inv>0) inv=Math.max(0,inv-dt);
+  }
+
+  function drawCloud(x,y,s,a){
+    ctx.globalAlpha=a; ctx.fillStyle="#fff"; ctx.beginPath();
+    ctx.arc(x,y,s,0,6.28); ctx.arc(x+s*1.1,y+s*.2,s*.8,0,6.28);
+    ctx.arc(x-s,y+s*.2,s*.7,0,6.28); ctx.arc(x+s*.2,y-s*.5,s*.7,0,6.28);
+    ctx.fill(); ctx.globalAlpha=1;
+  }
+  function drawImg(id,x,y,size,rot,alpha){
+    var im=IM(id); if(!im.complete||!im.naturalWidth) return;
+    ctx.save(); ctx.globalAlpha=alpha==null?1:alpha; ctx.translate(x,y); if(rot)ctx.rotate(rot);
+    ctx.drawImage(im,-size/2,-size/2,size,size); ctx.restore();
+  }
+  function drawEmoji(e,x,y,size){
+    ctx.font=size+"px serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(e,x,y);
+  }
+  function hud(txt,x,y,size,align){
+    ctx.font="800 "+size+"px ui-rounded,'Arial Rounded MT Bold',sans-serif";
+    ctx.textAlign=align||"left"; ctx.textBaseline="top";
+    ctx.fillStyle="rgba(46,58,72,.28)"; ctx.fillText(txt,x+size*0.05,y+size*0.06);
+    ctx.fillStyle="#fff"; ctx.fillText(txt,x,y);
+  }
+
+  function render(){
+    ctx.save();
+    if(shake>0) ctx.translate((Math.random()-.5)*shake*H*0.03,(Math.random()-.5)*shake*H*0.03);
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,"#69C6EF"); g.addColorStop(0.62,"#B4E4F7"); g.addColorStop(1,"#E2F5FF");
+    ctx.fillStyle=g; ctx.fillRect(-30,-30,W+60,H+60);
+    /* солнце с лучами */
+    var sx=W*0.85, sy=H*0.16, sr=H*0.1;
+    ctx.save(); ctx.translate(sx,sy);
+    ctx.fillStyle="rgba(255,201,75,0.32)"; ctx.save(); ctx.rotate(timeSec*0.25);
+    for(var k=0;k<12;k++){ ctx.rotate(6.28/12); ctx.fillRect(sr*0.95,-sr*0.08,sr*0.85,sr*0.16); }
+    ctx.restore(); ctx.fillStyle="#FFC94B"; ctx.beginPath(); ctx.arc(0,0,sr,0,6.28); ctx.fill(); ctx.restore();
+    /* параллакс-облака */
+    for(var i=0;i<CLOUDS.length;i++){ var c=CLOUDS[i], span=W+H*0.7;
+      var x=((c.x0*span-scroll*c.sp)%span); if(x<0)x+=span; x-=H*0.35; drawCloud(x,c.y,c.s,0.85); }
+    /* холмы */
+    hillLayer(H*0.87,"#7DC24B",scroll*0.5,H*0.09,0);
+    hillLayer(H*0.94,"#5FA636",scroll*0.75,H*0.07,1.7);
+    /* друзья-собиралки */
+    for(var a=0;a<cols.length;a++){ var C=cols[a], cy=C.y+Math.sin(C.bob)*H*0.02;
+      var rg=ctx.createRadialGradient(C.x,cy,0,C.x,cy,C.r*1.9);
+      rg.addColorStop(0,"rgba(255,255,255,.9)"); rg.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(C.x,cy,C.r*1.9,0,6.28); ctx.fill();
+      if(C.star) drawEmoji("⭐",C.x,cy,C.r*2.2); else drawImg(C.id,C.x,cy,C.r*2); }
+    /* тучки-препятствия */
+    for(var b=0;b<obs.length;b++){ var O=obs[b]; drawEmoji("⛈️",O.x,O.y+Math.sin(O.bob)*H*0.015,O.r*2.2); }
+    /* хвост из друзей */
+    for(var f=friends.length-1;f>=0;f--){ var idx=Math.min((f+1)*9,hist.length-1); var pos=hist[idx];
+      if(pos) drawImg(friends[f],pos.x,pos.y,H*0.09*(1-f*0.05),0,0.92-f*0.05); }
+    /* Бодо */
+    var rot=Math.max(-0.4,Math.min(0.4,vy*0.05));
+    var aura=ctx.createRadialGradient(bx,by,0,bx,by,H*0.1);
+    aura.addColorStop(0,"rgba(255,255,255,.55)"); aura.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=aura; ctx.beginPath(); ctx.arc(bx,by,H*0.1,0,6.28); ctx.fill();
+    var blink=invuln()&&(Math.floor(timeSec*12)%2===0);
+    drawImg("bodo",bx,by,H*0.14,rot,blink?0.35:1);
+    /* частицы */
+    for(var q=0;q<parts.length;q++){ var Pp=parts[q], al=1-Pp.t/Pp.life;
+      if(Pp.star){ ctx.globalAlpha=al; drawEmoji("✨",Pp.x,Pp.y,Pp.r*3.2); ctx.globalAlpha=1; }
+      else { ctx.globalAlpha=al; ctx.fillStyle=Pp.c; ctx.beginPath(); ctx.arc(Pp.x,Pp.y,Pp.r,0,6.28); ctx.fill(); ctx.globalAlpha=1; } }
+    /* линии скорости */
+    if(spd>spd0()*1.35){ ctx.strokeStyle="rgba(255,255,255,.3)"; ctx.lineWidth=Math.max(2,H*0.006);
+      for(var s2=0;s2<5;s2++){ var yy=(s2*H*0.21+(scroll*0.3)%(H*0.21))%H; var xx=(W-(scroll*1.5+s2*180)%(W*1.3));
+        ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx-H*0.12,yy); ctx.stroke(); } }
+    /* HUD */
+    hud("⭐ "+total, H*0.035, H*0.035, Math.round(H*0.055));
+    if(combo>=3) hud("×"+combo, bx, by-H*0.16, Math.round(H*0.07), "center");
+    ctx.restore();
+    if(flash>0){ ctx.fillStyle="rgba(255,255,255,"+flash+")"; ctx.fillRect(0,0,W,H); }
+  }
+  function hillLayer(baseY,color,off,amp,phase){
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(-30,H+30);
+    var step=H*0.1;
+    for(var x=-30;x<=W+30;x+=step){ var y=baseY-Math.abs(Math.sin((x+off)/(H*0.34)+phase))*amp; ctx.lineTo(x,y); }
+    ctx.lineTo(W+30,H+30); ctx.closePath(); ctx.fill();
+  }
+
+  function frame(now){
+    if(!alive)return;
+    var dt=Math.min((now-last)/1000,0.05); last=now;
+    if(!paused) update(dt);
+    render();
+    raf=requestAnimationFrame(frame);
+  }
+  function start(){
+    if(!alive)return;
+    resize();
+    if(W<2||H<2){ raf=requestAnimationFrame(start); return; }
+    initState();
+    last=performance.now();
+    raf=requestAnimationFrame(frame);
+  }
+  setTask("🚀 Собирай друзей!","Веди Бо́до пальцем вверх и вниз! Собирай друзей и не задень тучки!");
+  say("Веди Бо́до пальцем и собирай друзей! Осторожно, тучки!");
+  start();
+}
+
 /* ---------- навигация ---------- */
 var GAMES={memory:memoryRound, odd:oddRound, shadow:shadowRound, seq:seqRound,
   names:namesRound, letters:lettersGame, word:wordGame, sudoku:sudokuRound,
   maze:mazeRound, changed:changedRound, puzzle:puzzleRound, simon:simonGame, count:countRound,
-  prog:progRound, cw:cwGame, math:mathRound, diff:diffRound, read:readRound};
+  prog:progRound, cw:cwGame, math:mathRound, diff:diffRound, read:readRound, fly:flyGame};
 /* эти игры озвучивают задание сами */
-var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1, cw:1, math:1};
+var SELF_SPOKEN={letters:1, word:1, changed:1, count:1, simon:1, prog:1, cw:1, math:1, fly:1};
 
 var lastStart=0;
 document.querySelectorAll(".mbtn").forEach(function(b){
@@ -2093,7 +2308,8 @@ var GAME_META=[
   {k:"word",t:"Собери слово"},{k:"sudoku",t:"Судоку"},{k:"maze",t:"Лабиринт"},
   {k:"changed",t:"Что изменилось?"},{k:"puzzle",t:"Пазл"},{k:"simon",t:"Повтори!"},
   {k:"count",t:"Кого больше?"},{k:"prog",t:"Запрограммируй!"},{k:"cw",t:"Кроссворд"},
-  {k:"math",t:"Математика"},{k:"diff",t:"Найди отличия"},{k:"read",t:"Читай и покажи"}
+  {k:"math",t:"Математика"},{k:"diff",t:"Найди отличия"},{k:"read",t:"Читай и покажи"},
+  {k:"fly",t:"Бодо летит!"}
 ];
 var awardsScr=document.getElementById("awards"), awGrid=document.getElementById("awGrid");
 function openAwards(){
